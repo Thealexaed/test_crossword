@@ -301,7 +301,7 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
     while True:
         number_of_try += 1
         try:
-            if number_of_try > 30:
+            if number_of_try > 200:
                 raise InvalidList('Слишком много итераций, попробуйте изменить слова или сократить список слов')
         except:
             print('\nСлишком много итераций, попробуйте изменить слова или сократить список слов')
