@@ -19,7 +19,7 @@ assotioation_url = [
 
 # Функция кодирования символов из кирилицы в формат URL
 def url_decoder(word):
-    url_word = urlencode({'str':word}).split('=')[1]
+    url_word = urlencode({'str':word}).split('=')[1].replace('+', '_')
     return url_word
 
 # Функция декодирования символов из формата URL в кирилицу
