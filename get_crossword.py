@@ -1,8 +1,8 @@
 # Функция получения входных данных и построения кроссворда
 import sys
-from test_crossword.functions.get_words import find_words
-from test_crossword.functions.get_definitions import definition_search
-from test_crossword.functions.crossword_plotter import print_words
+from wiki_crossword.functions.get_words import find_words
+from wiki_crossword.functions.get_definitions import definition_search
+from wiki_crossword.functions.crossword_plotter import print_words
 
 def get_crossword(request_word, count_of_words, print_answers):
   try:
