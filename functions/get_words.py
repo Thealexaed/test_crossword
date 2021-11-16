@@ -2,7 +2,7 @@ import requests
 from lxml import html
 from random import randint
 import time
-from test_crossword.functions.url_searcher import *
+from wiki_crossword.functions.url_searcher import *
 
 # Функция поиска слов
 
