@@ -25,7 +25,7 @@ def url_decoder(word):
 # Функция декодирования символов из формата URL в кирилицу
 def url_encoder(url):
     word = parse_qs('str=' + url, encoding='utf-8')['str'][0]
-    return new_word
+    return word
 
 # Нахождение ассоциативных слов
 def association_list(word):
