@@ -1,5 +1,5 @@
 import  re
-from test_crossword.functions.url_searcher import *
+from wiki_crossword.functions.url_searcher import *
 
 # Функция поиска определений
 def definition_search(words):
