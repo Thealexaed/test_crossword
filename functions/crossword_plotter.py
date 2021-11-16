@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from random import randint
 import sys
-from test_crossword.functions.get_definitions import *
+from wiki_crossword.functions.get_definitions import *
 
 class Error(Exception):
     """Base class for other exceptions"""
