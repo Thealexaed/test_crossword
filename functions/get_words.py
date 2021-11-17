@@ -1,4 +1,4 @@
-from numpy import np
+import numpy as np
 import requests
 from lxml import html
 from random import randint
