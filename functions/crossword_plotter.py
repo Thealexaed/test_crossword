@@ -1,267 +1,17 @@
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from random import randint
 import sys
 from wiki_crossword.functions.get_definitions import *
-
-""" PLot crossword
-
-Return matplotlib object 
-"""
-
-# Функция печати кроссворда
-def print_words(words, n_words=None, definitions=dict(), random_sort=True, answers=True, plot=True, request_word=str()):
-    if n_words == None:
-      n_words = len(words)
-    if n_words > len(words):
-      sys.stdout.write(f'\rОбщее число найденных слов - {len(words)}. Задано при построении - {n_words}!')
-      return None
-    number_of_try = 0
-    if answers==True:
-        color_words='black'
-    else:
-        color_words='white'
-    if np.array([1 if set_letters(words, i) > 0 else 0 for i in words]).sum() != len(words):
-        sys.stdout.write('\rНевозможно составить кроссворд!')
-        return None
-    while True:
-        number_of_try += 1
-        try:
-            if number_of_try > 200:
-                raise InvalidList('Слишком много итераций, попробуйте изменить слова или сократить список слов')
-        except:
-            print('\nСлишком много итераций, попробуйте изменить слова или сократить список слов')
-            return None
-        try:
-            if random_sort == True:
-                order_list = random_order(words, n_words)
-            else:
-                order_list = words[:n_words]
-            base_data_dict = dict()
-            data_dict = dict()  # все слова со всеми координатами и ориентацией
-            data_dict_vertical = dict()  # координаты и буквы всех вертикалей
-            data_dict_horizontal = dict()  # координаты и буквы всех горизонталей
-            none_free_list = list()    # координаты в которых никак не может быть вторых слов
-            none_touch_list = list()   # координаты котрые находятся в касании всех слов
-        
-            list_coords = []
-            corrector_index = 0
-            first_word = order_list[0]
-            len_word = len(first_word)
-            x, y = len_word//2, len_word//2
-            fig, ax = plt.subplots(2,1, gridspec_kw={'height_ratios': [1000, 1]})
-            ax[0].set_axis_off()
-            ax[1].set_axis_off()
-            first_coordinates = [[x_0+0.5+x,y+0.5] for x_0 in range(len_word)]
-            plt.subplots_adjust(hspace=0.01)
-
-            for i,word in enumerate(order_list):
-                if i == 0:
-                    true_i = i
-                    orientation = 'По горизонтали'
-                    plot_word_horiz(word, first_coordinates, ax[0], true_i, color_words)
-                    list_coords = list_coord_append(list_coords, first_coordinates)
-                    first_coordinates = [tuple(x) for x in first_coordinates]
-        
-                    # Заполнение горизонтальных координат
-                    data_dict_horizontal.update(dict(zip([tuple(x) for x in first_coordinates], word)))
-                    
-                    # Заполнение общего словаря, слово, координаты, ориентация
-                    data_dict[word] = [first_coordinates, orientation, true_i]
-                    
-                    # Заполнение общего словаря со всеми буквами
-                    base_data_dict.update(dict(zip(first_coordinates, word)))
-                    none_touch_list += exec_list_new(first_coordinates)
-        
-            
-                    first_word = word
-                    continue
-                if i == 1:
-                    orientation = 'По вертикали'
-                    cur_list, base_coord = get_coord_vertical(word, data_dict_horizontal, base_data_dict, none_free_list, none_touch_list)
-
-                    true_i = i_search(data_dict, cur_list)
-                    if true_i != None:
-                      corrector_index += 1
-                    else:
-                      true_i = i
-
-                    plot_word_vert(word, cur_list, ax[0], true_i, color_words)
-                    list_coords = list_coord_append(list_coords, cur_list)
-                    cur_list = [tuple(x) for x in cur_list]
-
-                    data_dict_vertical.update(dict(zip(cur_list, word)))
-                    data_dict[word] = [cur_list, orientation, true_i]
-                    base_data_dict.update(dict(zip(cur_list, word)))
-                    none_touch_list += exec_list_new(cur_list)
-                    none_free_list += non_free_coords(base_coord)
-        
-                    data_dict_horizontal = refresh_free_coords(data_dict_horizontal, none_free_list)
-                    data_dict_vertical = refresh_free_coords(data_dict_vertical, none_free_list)
-        
-                    first_word = word
-                    continue
-                if i % 2 == 0:
-                    try:
-                        orientation = 'По горизонтали'
-                        cur_list, base_coord = get_coord_horisontal(word, data_dict_vertical, base_data_dict, none_free_list, none_touch_list)
-
-                        true_i = i_search(data_dict, cur_list)
-                        if true_i != None:  
-                          corrector_index += 1
-                        else:
-                          true_i = i
-                          true_i -= corrector_index
-
-                        plot_word_horiz(word, cur_list, ax[0], true_i, color_words)
-                        list_coords = list_coord_append(list_coords, cur_list)
-                        cur_list = [tuple(x) for x in cur_list]
-
-                        data_dict_horizontal.update(dict(zip(cur_list, word)))
-                        data_dict[word] = [cur_list, orientation, true_i]
-                        base_data_dict.update(dict(zip(cur_list, word)))
-        
-                        none_touch_list += exec_list_new(cur_list)
-                        none_free_list += non_free_coords(base_coord)
-
-                        data_dict_horizontal = refresh_free_coords(data_dict_horizontal, none_free_list)
-                        data_dict_vertical = refresh_free_coords(data_dict_vertical, none_free_list)
-        
-                        first_word = word
-                    except:
-                        orientation = 'По вертикали'
-                        cur_list, base_coord = get_coord_vertical(word, data_dict_horizontal, base_data_dict, none_free_list, none_touch_list)
-    
-                        true_i = i_search(data_dict, cur_list)
-                        if true_i != None:  
-                          corrector_index += 1
-                        else:
-                          true_i = i
-                          true_i -= corrector_index
-
-                        plot_word_vert(word, cur_list, ax[0], true_i, color_words)
-                        list_coords = list_coord_append(list_coords, cur_list)
-                        cur_list = [tuple(x) for x in cur_list]
-        
-                        data_dict_vertical.update(dict(zip(cur_list, word)))
-                        data_dict[word] = [cur_list, orientation, true_i]
-                        base_data_dict.update(dict(zip(cur_list, word)))
-        
-                        none_touch_list += exec_list_new(cur_list)
-                        none_free_list += non_free_coords(base_coord)
-        
-                    
-        
-                        data_dict_vertical = refresh_free_coords(data_dict_vertical, none_free_list)
-                        data_dict_horizontal = refresh_free_coords(data_dict_horizontal, none_free_list)
-        
-                        first_word = word
-                        
-                if i % 2 == 1:
-                    try:
-                        orientation = 'По вертикали'
-                        cur_list, base_coord = get_coord_vertical(word, data_dict_horizontal, base_data_dict, none_free_list, none_touch_list)
-    
-                        true_i = i_search(data_dict, cur_list)
-                        if true_i != None:  
-                          corrector_index += 1
-                        else:
-                          true_i = i
-                          true_i -= corrector_index
-
-                        plot_word_vert(word, cur_list, ax[0], true_i, color_words)
-                        list_coords = list_coord_append(list_coords, cur_list)
-                        cur_list = [tuple(x) for x in cur_list]
-        
-                        data_dict_vertical.update(dict(zip(cur_list, word)))
-                        data_dict[word] = [cur_list, orientation, true_i]
-                        base_data_dict.update(dict(zip(cur_list, word)))
-        
-                        none_touch_list += exec_list_new(cur_list)
-                        none_free_list += non_free_coords(base_coord)
-        
-                    
-        
-                        data_dict_vertical = refresh_free_coords(data_dict_vertical, none_free_list)
-                        data_dict_horizontal = refresh_free_coords(data_dict_horizontal, none_free_list)
-        
-                        first_word = word
-                    except:
-                        orientation = 'По горизонтали'
-                        cur_list, base_coord = get_coord_horisontal(word, data_dict_vertical, base_data_dict, none_free_list, none_touch_list)
-
-                        true_i = i_search(data_dict, cur_list)
-                        if true_i != None:  
-                          corrector_index += 1
-                        else:
-                          true_i = i
-                          true_i -= corrector_index
-
-                        plot_word_horiz(word, cur_list, ax[0], true_i, color_words)
-                        list_coords = list_coord_append(list_coords, cur_list)
-                        cur_list = [tuple(x) for x in cur_list]
-
-                        data_dict_horizontal.update(dict(zip(cur_list, word)))
-                        data_dict[word] = [cur_list, orientation, true_i]
-                        base_data_dict.update(dict(zip(cur_list, word)))
-        
-                        none_touch_list += exec_list_new(cur_list)
-                        none_free_list += non_free_coords(base_coord)
-
-                        data_dict_horizontal = refresh_free_coords(data_dict_horizontal, none_free_list)
-                        data_dict_vertical = refresh_free_coords(data_dict_vertical, none_free_list)
-        
-                        first_word = word
-
-            if plot == True:
-                
-                x_s = [float(i.split(',')[0]) for i in list_coords]
-                y_s = [float(i.split(',')[1]) for i in list_coords]
-
-                x_min = min(x_s)
-                y_min = min(y_s)
-
-                x_max = max(x_s)
-                y_max = max(y_s)
-
-                width = int(x_max - x_min)
-                height = int(y_max - y_min)
-
-                definitions = create_definition(data_dict, definitions)
-                new_def = ['\n'+x+'\n\n' if x=='По горизонтали:' or x=='По вертикали:'  else x+'\n' for x in definitions]
-                new_def = ''.join(new_def)
-                y_min -= new_def.count('\n')
-                x_min -= 1
-            
-        except: 
-            text = '\r'+'Попытка построения '+str(number_of_try)
-            sys.stdout.write(text)
-            plt.close()
-            continue
-        else:
-            if plot == True:
-                if request_word == 'Своя тема':
-                    theme = 'Кроссворд на свою тему'
-                else:
-                    theme = 'Кроссворд на тему\n"'+request_word+'"'
-                ax[0].text((x_max - abs(x_min))/2+3, y_max+2, theme, ha='center', rotation=0, wrap=True, fontsize=25)
-                ax[1].text(0,
-                           0,
-                           new_def,
-                           ha='left',
-                           rotation=0,
-                           wrap=True,
-                           fontsize=20,
-                           fontstyle='italic',
-                           verticalalignment='top')
-                fig.set_figwidth(width)
-                fig.set_figheight(height)
-                text = '\r'+'Поздравляем! Кроссворд составлен!'
-                sys.stdout.write(text)
-                plt.show()
-            else:
-                plt.close()
-            break
+matplotlib.rcParams.update(
+    {
+        'text.usetex': False,
+        'font.family': 'stixgeneral',
+        #'mathtext.fontset': 'stix',
+    }
+)
+plt.style.use('bmh')
 
 class Error(Exception):
     """Base class for other exceptions"""
@@ -270,7 +20,6 @@ class Error(Exception):
 class InvalidList(Error):
     """Raised when the input value is too small"""
     pass
-
 
 
 # Функция получения рандомного списка слов заданного количества
@@ -542,3 +291,259 @@ def list_coord_append(base_list, new_list):
         base_list.append(str(item[0])+','+str(item[1]))
     return base_list
 
+# Функция печати кроссворда
+def print_words(words, n_words=None, definitions=dict(), random_sort=True, answers=True, plot=True, request_word=str()):
+    if n_words == None:
+      n_words = len(words)
+    if n_words > len(words):
+      sys.stdout.write(f'\rОбщее число найденных слов - {len(words)}. Задано при построении - {n_words}!')
+      return None
+    number_of_try = 0
+    if answers==True:
+        color_words='black'
+    else:
+        color_words='white'
+    if np.array([1 if set_letters(words, i) > 0 else 0 for i in words]).sum() != len(words):
+        sys.stdout.write('\rНевозможно составить кроссворд!')
+        return None
+    while True:
+        number_of_try += 1
+        try:
+            if number_of_try > 200:
+                raise InvalidList('Слишком много итераций, попробуйте изменить слова или сократить список слов')
+        except:
+            print('\nСлишком много итераций, попробуйте изменить слова или сократить список слов')
+            return None
+        try:
+            if random_sort == True:
+                order_list = random_order(words, n_words)
+            else:
+                order_list = words[:n_words]
+            base_data_dict = dict()
+            data_dict = dict()  # все слова со всеми координатами и ориентацией
+            data_dict_vertical = dict()  # координаты и буквы всех вертикалей
+            data_dict_horizontal = dict()  # координаты и буквы всех горизонталей
+            none_free_list = list()    # координаты в которых никак не может быть вторых слов
+            none_touch_list = list()   # координаты котрые находятся в касании всех слов
+            list_coords = []
+            corrector_index = 0
+            first_word = order_list[0]
+            len_word = len(first_word)
+            x, y = len_word//2, len_word//2
+            #fig, ax = plt.subplots(1,2, gridspec_kw={'width_ratios': [1000, 1]})
+            fig, ax = plt.subplots(ncols=2, nrows=2, gridspec_kw={'height_ratios': [1, 1000], 'width_ratios': [1000, 1]})
+            ax[0,0].set_axis_off()
+            ax[1,0].set_axis_off()
+            ax[0,1].set_axis_off()
+            ax[1,1].set_axis_off()
+            first_coordinates = [[x_0+0.5+x,y+0.5] for x_0 in range(len_word)]
+            plt.subplots_adjust(hspace=0.01)
+            w = 2.4
+            plt.subplots_adjust(wspace=0.01)
+            for i,word in enumerate(order_list):
+                if i == 0:
+                    true_i = i
+                    orientation = 'По горизонтали'
+                    plot_word_horiz(word, first_coordinates, ax[1,0], true_i, color_words)
+                    list_coords = list_coord_append(list_coords, first_coordinates)
+                    first_coordinates = [tuple(x) for x in first_coordinates]
+        
+                    # Заполнение горизонтальных координат
+                    data_dict_horizontal.update(dict(zip([tuple(x) for x in first_coordinates], word)))
+                    
+                    # Заполнение общего словаря, слово, координаты, ориентация
+                    data_dict[word] = [first_coordinates, orientation, true_i]
+                    
+                    # Заполнение общего словаря со всеми буквами
+                    base_data_dict.update(dict(zip(first_coordinates, word)))
+                    none_touch_list += exec_list_new(first_coordinates)
+        
+            
+                    first_word = word
+                    continue
+                if i == 1:
+                    orientation = 'По вертикали'
+                    cur_list, base_coord = get_coord_vertical(word, data_dict_horizontal, base_data_dict, none_free_list, none_touch_list)
+
+                    true_i = i_search(data_dict, cur_list)
+                    if true_i != None:
+                      corrector_index += 1
+                    else:
+                      true_i = i
+
+                    plot_word_vert(word, cur_list, ax[1,0], true_i, color_words)
+                    list_coords = list_coord_append(list_coords, cur_list)
+                    cur_list = [tuple(x) for x in cur_list]
+
+                    data_dict_vertical.update(dict(zip(cur_list, word)))
+                    data_dict[word] = [cur_list, orientation, true_i]
+                    base_data_dict.update(dict(zip(cur_list, word)))
+                    none_touch_list += exec_list_new(cur_list)
+                    none_free_list += non_free_coords(base_coord)
+        
+                    data_dict_horizontal = refresh_free_coords(data_dict_horizontal, none_free_list)
+                    data_dict_vertical = refresh_free_coords(data_dict_vertical, none_free_list)
+        
+                    first_word = word
+                    continue
+                if i % 2 == 0:
+                    try:
+                        orientation = 'По горизонтали'
+                        cur_list, base_coord = get_coord_horisontal(word, data_dict_vertical, base_data_dict, none_free_list, none_touch_list)
+
+                        true_i = i_search(data_dict, cur_list)
+                        if true_i != None:  
+                          corrector_index += 1
+                        else:
+                          true_i = i
+                          true_i -= corrector_index
+
+                        plot_word_horiz(word, cur_list, ax[1,0], true_i, color_words)
+                        list_coords = list_coord_append(list_coords, cur_list)
+                        cur_list = [tuple(x) for x in cur_list]
+
+                        data_dict_horizontal.update(dict(zip(cur_list, word)))
+                        data_dict[word] = [cur_list, orientation, true_i]
+                        base_data_dict.update(dict(zip(cur_list, word)))
+        
+                        none_touch_list += exec_list_new(cur_list)
+                        none_free_list += non_free_coords(base_coord)
+
+                        data_dict_horizontal = refresh_free_coords(data_dict_horizontal, none_free_list)
+                        data_dict_vertical = refresh_free_coords(data_dict_vertical, none_free_list)
+        
+                        first_word = word
+                    except:
+                        orientation = 'По вертикали'
+                        cur_list, base_coord = get_coord_vertical(word, data_dict_horizontal, base_data_dict, none_free_list, none_touch_list)
+    
+                        true_i = i_search(data_dict, cur_list)
+                        if true_i != None:  
+                          corrector_index += 1
+                        else:
+                          true_i = i
+                          true_i -= corrector_index
+
+                        plot_word_vert(word, cur_list, ax[1,0], true_i, color_words)
+                        list_coords = list_coord_append(list_coords, cur_list)
+                        cur_list = [tuple(x) for x in cur_list]
+        
+                        data_dict_vertical.update(dict(zip(cur_list, word)))
+                        data_dict[word] = [cur_list, orientation, true_i]
+                        base_data_dict.update(dict(zip(cur_list, word)))
+        
+                        none_touch_list += exec_list_new(cur_list)
+                        none_free_list += non_free_coords(base_coord)
+        
+                    
+        
+                        data_dict_vertical = refresh_free_coords(data_dict_vertical, none_free_list)
+                        data_dict_horizontal = refresh_free_coords(data_dict_horizontal, none_free_list)
+        
+                        first_word = word
+                        
+                if i % 2 == 1:
+                    try:
+                        orientation = 'По вертикали'
+                        cur_list, base_coord = get_coord_vertical(word, data_dict_horizontal, base_data_dict, none_free_list, none_touch_list)
+    
+                        true_i = i_search(data_dict, cur_list)
+                        if true_i != None:  
+                          corrector_index += 1
+                        else:
+                          true_i = i
+                          true_i -= corrector_index
+
+                        plot_word_vert(word, cur_list, ax[1,0], true_i, color_words)
+                        list_coords = list_coord_append(list_coords, cur_list)
+                        cur_list = [tuple(x) for x in cur_list]
+        
+                        data_dict_vertical.update(dict(zip(cur_list, word)))
+                        data_dict[word] = [cur_list, orientation, true_i]
+                        base_data_dict.update(dict(zip(cur_list, word)))
+        
+                        none_touch_list += exec_list_new(cur_list)
+                        none_free_list += non_free_coords(base_coord)
+        
+                    
+        
+                        data_dict_vertical = refresh_free_coords(data_dict_vertical, none_free_list)
+                        data_dict_horizontal = refresh_free_coords(data_dict_horizontal, none_free_list)
+        
+                        first_word = word
+                    except:
+                        orientation = 'По горизонтали'
+                        cur_list, base_coord = get_coord_horisontal(word, data_dict_vertical, base_data_dict, none_free_list, none_touch_list)
+
+                        true_i = i_search(data_dict, cur_list)
+                        if true_i != None:  
+                          corrector_index += 1
+                        else:
+                          true_i = i
+                          true_i -= corrector_index
+
+                        plot_word_horiz(word, cur_list, ax[1,0], true_i, color_words)
+                        list_coords = list_coord_append(list_coords, cur_list)
+                        cur_list = [tuple(x) for x in cur_list]
+
+                        data_dict_horizontal.update(dict(zip(cur_list, word)))
+                        data_dict[word] = [cur_list, orientation, true_i]
+                        base_data_dict.update(dict(zip(cur_list, word)))
+        
+                        none_touch_list += exec_list_new(cur_list)
+                        none_free_list += non_free_coords(base_coord)
+
+                        data_dict_horizontal = refresh_free_coords(data_dict_horizontal, none_free_list)
+                        data_dict_vertical = refresh_free_coords(data_dict_vertical, none_free_list)
+        
+                        first_word = word
+
+            if plot == True:
+                
+                x_s = [float(i.split(',')[0]) for i in list_coords]
+                y_s = [float(i.split(',')[1]) for i in list_coords]
+
+                x_min = min(x_s)
+                y_min = min(y_s)
+
+                x_max = max(x_s)
+                y_max = max(y_s)
+
+                width = int(x_max - x_min)
+                height = int(y_max - y_min)
+
+                definitions = create_definition(data_dict, definitions)
+                new_def = ['\n'+x+'\n\n' if x=='По горизонтали:' or x=='По вертикали:'  else x+'\n' for x in definitions]
+                new_def = ''.join(new_def)
+                y_min -= new_def.count('\n')
+                x_min -= 1
+            
+        except: 
+            text = '\r'+'Попытка построения '+str(number_of_try)+ '       '
+            sys.stdout.write(text)
+            plt.close()
+            continue
+        else:
+            if plot == True:
+                if request_word == 'Своя тема':
+                    theme = 'Кроссворд на свою тему'
+                else:
+                    theme = 'Кроссворд на тему\n"'+request_word+'"'
+                ax[1,0].text((x_max - abs(x_min))/2+3, y_max+2, theme, ha='center', rotation=0, wrap=True, fontsize=25)
+                ax[0,1].text(0,
+                           0,
+                           new_def,
+                           ha='left',
+                           rotation=0,
+                           wrap=True,
+                           fontsize=20,
+                           fontstyle='italic',
+                           verticalalignment='top')
+                fig.set_figwidth(width)
+                fig.set_figheight(height)
+                text = '\r'+'Поздравляем! Кроссворд составлен!'
+                sys.stdout.write(text)
+                plt.show()
+            else:
+                plt.close()
+            break
