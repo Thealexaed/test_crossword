@@ -188,17 +188,22 @@ def sort_definitions(definotions):
   new_definitions = [str(key) + dict_defs[key] for key in list_sort]
   return new_definitions
 
+def cutter_text(text, width=60):
+    i = 0
+    while [max(len(x) for x in text.split('\n'))][0] > width+15:
+        index_reset = text.split('\n')[i][width:].index(' ')+width + len(text) - len(text.split('\n')[i])
+        text = text[:index_reset]+text[index_reset:index_reset+1].replace(' ', '\n')+'\t\t\t\t'+text[index_reset+1:]
+        i += 1
+    return text
+
 # Функция предобработки определений
 def create_definition(data_dict, dict_def):
   definitions = []
   orientation_list = [data_dict[x][1] for x in data_dict.keys()]
   for w in data_dict.keys():
     i = 0
-    defs_new = dict_def[w]
-    while [max(len(x) for x in defs_new.split('\n'))][0] > 100:
-      index_reset = defs_new.split('\n')[i][81:].index(' ')+81 + len(defs_new) - len(defs_new.split('\n')[i])
-      defs_new = defs_new[:index_reset]+defs_new[index_reset:index_reset+1].replace(' ', '\n')+defs_new[index_reset+1:]
-      i += 1
+    defs_new = cutter_text(dict_def[w])
+
     definitions.append(defs_new)
 
   horizontal_def = []
@@ -216,3 +221,16 @@ def create_definition(data_dict, dict_def):
   vertical_def = ['По вертикали:', ] + vertical_def
   definitions = horizontal_def + vertical_def
   return definitions
+
+def get_answers(data_dict):
+    horisontal_answers = ''
+    vertical_answers = ''
+    for k,v in data_dict.items():
+        if v[1] == 'По горизонтали':
+            horisontal_answers += (str(v[2]+1)+') '+k.capitalize()) + ', '
+        else:
+            vertical_answers += (str(v[2]+1)+') '+k.capitalize()) + ', '
+    horisontal_answers = cutter_text(horisontal_answers[:-2]+'.', 50)
+    vertical_answers = cutter_text(vertical_answers[:-2]+'.', 50)
+    answers = 'По горизонтали\n\t\t\t\t' + horisontal_answers + '\n' + 'По вертикали\n\t\t\t\t' + vertical_answers
+    return answers
