@@ -258,7 +258,7 @@ def get_coord_vertical(word, dict_vertical, base_data_dict, none_free_list, none
     return second_coords, first_dot
 
 # Функция построения слов по горизонтали
-def plot_word_horiz(word, coordinates, ax, item, color_words):
+def plot_word_horiz(word, coordinates, ax, item, visible, difficult):
     x = coordinates[0][0]-0.5
     y = coordinates[0][1]-0.5
     ax.plot(x+0.2,y+0.8,marker='$'+str(item+1)+'$', markersize=10, c='black')
@@ -266,14 +266,19 @@ def plot_word_horiz(word, coordinates, ax, item, color_words):
     h_line = np.linspace(x, x+len(word), 10)
     ax.plot(h_line,np.linspace(y,y,10), color='black')
     ax.plot(h_line,np.linspace(y+1,y+1,10), color='black')
+    v_count = 0
     for i, letter in enumerate(word):
+        visible = randint(0,1)
+        v_count += visible
+        if v_count > len(word)*difficult:
+            visible = 0
         ax.plot(np.linspace(x+i,x+i,10),w_line, color='black')
-        ax.scatter(coordinates[0][0]+i,coordinates[0][1],marker='$'+letter+'$', s=150, color=color_words)
+        ax.scatter(coordinates[0][0]+i,coordinates[0][1],marker='$'+letter+'$', s=150, visible=visible, color='black')
     i+=1
     ax.plot(np.linspace(x+i,x+i,10),w_line, color='black')
 
 # Функция построения слов по вертикали
-def plot_word_vert(word, coordinates, ax, item, color_words):
+def plot_word_vert(word, coordinates, ax, item, visible, difficult):
     x = coordinates[0][0] - 0.5
     y = coordinates[0][1] + 0.5
     ax.plot(x+0.2,y-0.2,marker='$'+str(item+1)+'$', markersize=10, c='black')
@@ -281,9 +286,14 @@ def plot_word_vert(word, coordinates, ax, item, color_words):
     h_line = np.linspace(x, x+1, 10)
     ax.plot(np.linspace(x,x,10), w_line, color='black')
     ax.plot(np.linspace(x+1,x+1,10), w_line, color='black')
+    v_count = 0
     for i, letter in enumerate(word):
+        visible = randint(0,1)
+        v_count += visible
+        if v_count > len(word)*difficult:
+            visible = 0
         ax.plot(h_line,np.linspace(y-i,y-i,10), color='black')
-        ax.scatter(coordinates[i][0],coordinates[i][1], marker='$'+letter+'$', s=150, color=color_words)
+        ax.scatter(coordinates[i][0],coordinates[i][1], marker='$'+letter+'$', s=150, visible=visible, color='black')
     i+=1
     ax.plot(h_line,np.linspace(y-i,y-i,10), color='black')
     
@@ -294,17 +304,16 @@ def list_coord_append(base_list, new_list):
     return base_list
 
 # Функция печати кроссворда
-def print_words(words, n_words=None, definitions=dict(), random_sort=True, answers=True, plot=True, request_word=str()):
+def print_words(words, n_words=None, definitions=dict(), random_sort=True, answers=True, plot=True, request_word=str(), difficult=int()):
     if n_words == None:
       n_words = len(words)
     if n_words > len(words):
       sys.stdout.write(f'\rОбщее число найденных слов - {len(words)}. Задано при построении - {n_words}!')
       return None
     number_of_try = 0
-    if answers==True:
-        color_words='black'
-    else:
-        color_words='white'
+    
+    visible = answers
+    
     if np.array([1 if set_letters(words, i) > 0 else 0 for i in words]).sum() != len(words):
         sys.stdout.write('\rНевозможно составить кроссворд!')
         return None
@@ -346,7 +355,7 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                 if i == 0:
                     true_i = i
                     orientation = 'По горизонтали'
-                    plot_word_horiz(word, first_coordinates, ax[1,0], true_i, color_words)
+                    plot_word_horiz(word, first_coordinates, ax[1,0], true_i, visible, difficult)
                     list_coords = list_coord_append(list_coords, first_coordinates)
                     first_coordinates = [tuple(x) for x in first_coordinates]
         
@@ -373,7 +382,7 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                     else:
                       true_i = i
 
-                    plot_word_vert(word, cur_list, ax[1,0], true_i, color_words)
+                    plot_word_vert(word, cur_list, ax[1,0], true_i, visible, difficult)
                     list_coords = list_coord_append(list_coords, cur_list)
                     cur_list = [tuple(x) for x in cur_list]
 
@@ -400,7 +409,7 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                           true_i = i
                           true_i -= corrector_index
 
-                        plot_word_horiz(word, cur_list, ax[1,0], true_i, color_words)
+                        plot_word_horiz(word, cur_list, ax[1,0], true_i, visible, difficult)
                         list_coords = list_coord_append(list_coords, cur_list)
                         cur_list = [tuple(x) for x in cur_list]
 
@@ -426,7 +435,7 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                           true_i = i
                           true_i -= corrector_index
 
-                        plot_word_vert(word, cur_list, ax[1,0], true_i, color_words)
+                        plot_word_vert(word, cur_list, ax[1,0], true_i, visible, difficult)
                         list_coords = list_coord_append(list_coords, cur_list)
                         cur_list = [tuple(x) for x in cur_list]
         
@@ -456,7 +465,7 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                           true_i = i
                           true_i -= corrector_index
 
-                        plot_word_vert(word, cur_list, ax[1,0], true_i, color_words)
+                        plot_word_vert(word, cur_list, ax[1,0], true_i, visible, difficult)
                         list_coords = list_coord_append(list_coords, cur_list)
                         cur_list = [tuple(x) for x in cur_list]
         
@@ -484,7 +493,7 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                           true_i = i
                           true_i -= corrector_index
 
-                        plot_word_horiz(word, cur_list, ax[1,0], true_i, color_words)
+                        plot_word_horiz(word, cur_list, ax[1,0], true_i, visible, difficult)
                         list_coords = list_coord_append(list_coords, cur_list)
                         cur_list = [tuple(x) for x in cur_list]
 
@@ -520,13 +529,8 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                 y_min -= new_def.count('\n')
                 x_min -= 1
                 answers = get_answers(data_dict)
-                answers +='\n'*(new_def.count('\n')+3)
-            
-            
-                #answers = cutter_text(answers, 50)
-                
-                
-            
+                answers += '\n'*(new_def.count('\n')+3)
+                   
         except: 
             text = '\r'+'Попытка построения '+str(number_of_try)+ '       '
             sys.stdout.write(text)
