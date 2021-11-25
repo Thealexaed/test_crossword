@@ -232,5 +232,5 @@ def get_answers(data_dict):
             vertical_answers += (str(v[2]+1)+') '+k.capitalize()) + ', '
     horisontal_answers = cutter_text(horisontal_answers[:-2]+'.', 50)
     vertical_answers = cutter_text(vertical_answers[:-2]+'.', 50)
-    answers = 'По горизонтали\n\t\t\t\t' + horisontal_answers + '\n' + 'По вертикали\n\t\t\t\t' + vertical_answers
+    answers = 'Ответы:\nПо горизонтали\n\t\t\t\t' + horisontal_answers + '\n' + 'По вертикали\n\t\t\t\t' + vertical_answers
     return answers
