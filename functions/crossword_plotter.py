@@ -557,13 +557,22 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                            fontsize=22,
                            fontstyle='italic',
                            verticalalignment='top')
-                ax[0,1].text((1/width)*18000,
+                ax[0,1].text((1/width)*15000,
                            0,
                            answers,
                            ha='left',
                            rotation=180,
                            wrap=True,
                            fontsize=22,
+                           fontstyle='italic',
+                           verticalalignment='bottom')
+                ax[0,1].text((1/width)*15000,
+                           0,
+                           'Ответы:' + '\n' * (answers.count('\n')-5),
+                           ha='left',
+                           rotation=180,
+                           wrap=True,
+                           fontsize=28,
                            fontstyle='italic',
                            verticalalignment='bottom')
                 fig.set_figwidth(width)
