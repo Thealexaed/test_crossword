@@ -4,13 +4,13 @@ from wiki_crossword.functions.get_words import find_words
 from wiki_crossword.functions.get_definitions import definition_search
 from wiki_crossword.functions.crossword_plotter import print_words
 
-def get_crossword(request_word, count_of_words, print_answers):
+def get_crossword(request_word, count_of_words, print_answers, difficult):
   try:
     if request_word == '':
       print('Введите слово!')
     else:
       try:
-        final_def(request_word, count_of_words, print_answers)
+        final_def(request_word, count_of_words, print_answers, difficult)
       except:
         sys.stdout.write('\rСлова не найдены! Уточните запрос!')
   except KeyboardInterrupt:
@@ -19,7 +19,7 @@ def get_crossword(request_word, count_of_words, print_answers):
 
 
 # Функция составления кроссворда
-def final_def(word, count_of_words, print_answers):
+def final_def(word, count_of_words, print_answers, difficult):
     text = '\rИщу слова...'
     sys.stdout.write(text)
     if ',' in word:
@@ -46,4 +46,4 @@ def final_def(word, count_of_words, print_answers):
                 random_sort=True,
                 answers=print_answers,
                 definitions=definitions,
-                request_word = request_word)
+                request_word=request_word, difficult=difficult)
