@@ -268,12 +268,15 @@ def plot_word_horiz(word, coordinates, ax, item, visible, difficult):
     ax.plot(h_line,np.linspace(y+1,y+1,10), color='black')
     v_count = 0
     for i, letter in enumerate(word):
-        visible = randint(0,1)
-        v_count += visible
-        if v_count > len(word)*difficult:
-            visible = 0
+        if visible == True:
+            set_visible = visible
+        else:
+            set_visible = randint(0,1)
+            v_count += set_visible
+            if v_count > len(word)*difficult:
+                set_visible = 0
         ax.plot(np.linspace(x+i,x+i,10),w_line, color='black')
-        ax.scatter(coordinates[0][0]+i,coordinates[0][1],marker='$'+letter+'$', s=150, visible=visible, color='black')
+        ax.scatter(coordinates[0][0]+i,coordinates[0][1],marker='$'+letter+'$', s=150, visible=set_visible, color='black')
     i+=1
     ax.plot(np.linspace(x+i,x+i,10),w_line, color='black')
 
@@ -288,12 +291,15 @@ def plot_word_vert(word, coordinates, ax, item, visible, difficult):
     ax.plot(np.linspace(x+1,x+1,10), w_line, color='black')
     v_count = 0
     for i, letter in enumerate(word):
-        visible = randint(0,1)
-        v_count += visible
-        if v_count > len(word)*difficult:
-            visible = 0
+        if visible == True:
+            set_visible = visible
+        else:
+            set_visible = randint(0,1)
+            v_count += set_visible
+            if v_count > len(word)*difficult:
+                set_visible = 0
         ax.plot(h_line,np.linspace(y-i,y-i,10), color='black')
-        ax.scatter(coordinates[i][0],coordinates[i][1], marker='$'+letter+'$', s=150, visible=visible, color='black')
+        ax.scatter(coordinates[i][0],coordinates[i][1], marker='$'+letter+'$', s=150, visible=set_visible, color='black')
     i+=1
     ax.plot(h_line,np.linspace(y-i,y-i,10), color='black')
     
