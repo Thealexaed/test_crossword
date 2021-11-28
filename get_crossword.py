@@ -10,9 +10,9 @@ def get_crossword(request_word, count_of_words, print_answers, difficult):
     'Средне':0.6,
     'Сложно':0.3,
     'Очень сложно':0.0,
-    'Печатать с ответами':10
   }
-  difficult = difficult_dict[difficult]
+  if print_answers == False:
+      difficult = difficult_dict[difficult]
   try:
     if request_word == '':
       print('Введите слово!')
