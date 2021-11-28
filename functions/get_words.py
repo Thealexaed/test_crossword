@@ -51,10 +51,10 @@ def find_words(request_word, count_of_words=5, coef=0.7):
           category_urls = search_category(html_tree)[0]
           category_list = search_category(html_tree)[1]
           category_list = range_category(category_list, request_word)
-          print('Внимание! Тема изменена на','"'+category_list[0]+'"','если тема неподходит, уточние запрос.')
+          #print('Внимание! Тема изменена на','"'+category_list[0]+'"','если тема неподходит, уточние запрос.')
           return request_to_search(category_list[0], count_of_words, coef)
         except:
-          print('Внимание! Тема изменена на','"'+new_request+'"','если тема неподходит, уточние запрос.')
+          #print('Внимание! Тема изменена на','"'+new_request+'"','если тема неподходит, уточние запрос.')
           return request_to_search(new_request, count_of_words, coef)
   else:
     return request_to_search(category_list[0], count_of_words, coef)
