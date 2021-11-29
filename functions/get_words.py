@@ -7,7 +7,7 @@ from wiki_crossword.functions.url_searcher import *
 
 # Функция поиска слов
 
-def find_words(request_word, count_of_words=5, coef=2):
+def find_words(request_word, count_of_words=5, coef=0.7):
   URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(request_word)
   page = requests.get(URL).content
   html_tree = html.fromstring(page.decode('UTF-8'))
@@ -47,7 +47,9 @@ def find_words(request_word, count_of_words=5, coef=2):
           page = requests.get(URL).content
           html_tree = html.fromstring(page.decode('UTF-8'))
           new_request = html_tree.xpath(".//div[contains(@class,'mw-highlight mw-highlight-lang-xml mw-content-ltr')]/pre/text()")[10]
-          print('Внимание! Тема изменена на','"'+new_request+'"','если тема неподходит, уточние запрос.')
+          attention = '\rВнимание! Тема изменена на '+'"'+new_request+'"'+'. Если тема не подходит, уточние запрос.'
+          sys.stdout.write(attention)
+          
           return request_to_search(new_request, count_of_words, coef)
         except:
           new_request = search_unknown_category(request_word)
@@ -58,10 +60,12 @@ def find_words(request_word, count_of_words=5, coef=2):
           category_urls = search_category(html_tree)[0]
           category_list = search_category(html_tree)[1]
           category_list = range_category(category_list, request_word)
-          print('Внимание! Тема изменена на','"'+category_list[0]+'"','если тема неподходит, уточние запрос.')
+          attention = '\rВнимание! Тема изменена на '+'"'+category_list[0]+'"'+'. Если тема не подходит, уточние запрос.'
+          sys.stdout.write(attention)
           return request_to_search(category_list[0], count_of_words, coef)
         except:
-          print('Внимание! Тема изменена на','"'+new_request+'"','если тема неподходит, уточние запрос.')
+          attention = '\rВнимание! Тема изменена на '+'"'+new_request+'"'+'. Если тема не подходит, уточние запрос.'
+          sys.stdout.write(attention)
           return request_to_search(new_request, count_of_words, coef)
   else:
     return request_to_search(category_list[0], count_of_words, coef)
