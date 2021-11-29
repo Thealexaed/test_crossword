@@ -7,7 +7,7 @@ from wiki_crossword.functions.url_searcher import *
 
 # Функция поиска слов
 
-def find_words(request_word, count_of_words=5, coef=0.7):
+def find_words(request_word, count_of_words=5, coef=2):
   URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(request_word)
   page = requests.get(URL).content
   html_tree = html.fromstring(page.decode('UTF-8'))
