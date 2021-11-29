@@ -5,7 +5,6 @@ from random import randint
 import time
 from wiki_crossword.functions.url_searcher import *
 
-#https://ru.wikipedia.org/w/api.php?action=opensearch&search=%D0%B6%D0%B8%D0%B2%D0%BE%D1%82%D0%BD%D1%8B%D0%B5%20%D0%B0%D1%84%D1%80%D0%B8%D0%BA%D0%B8&format=xml&limit=10&profile=engine_autoselect
 # Функция поиска слов
 
 def find_words(request_word, count_of_words=5, coef=0.7):
@@ -43,8 +42,15 @@ def find_words(request_word, count_of_words=5, coef=0.7):
     if request_word in category_list:
         return request_to_search(request_word, count_of_words, coef)
     else:
-        new_request = search_unknown_category(request_word)
-        
+        try:
+          URL = 'https://ru.wikipedia.org/w/api.php?action=opensearch&search='+url_decoder(request_word)+'&format=xmlfm&limit=10&profile=engine_autoselect'
+          page = requests.get(URL).content
+          html_tree = html.fromstring(page.decode('UTF-8'))
+          new_request = html_tree.xpath(".//div[contains(@class,'mw-highlight mw-highlight-lang-xml mw-content-ltr')]/pre/text()")[10]
+          print('Внимание! Тема изменена на','"'+new_request+'"','если тема неподходит, уточние запрос.')
+          return request_to_search(new_request, count_of_words, coef)
+        except:
+          new_request = search_unknown_category(request_word)
         try:
           URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(new_request)
           page = requests.get(URL).content
@@ -52,14 +58,13 @@ def find_words(request_word, count_of_words=5, coef=0.7):
           category_urls = search_category(html_tree)[0]
           category_list = search_category(html_tree)[1]
           category_list = range_category(category_list, request_word)
-          #print('Внимание! Тема изменена на','"'+category_list[0]+'"','если тема неподходит, уточние запрос.')
+          print('Внимание! Тема изменена на','"'+category_list[0]+'"','если тема неподходит, уточние запрос.')
           return request_to_search(category_list[0], count_of_words, coef)
         except:
-          #print('Внимание! Тема изменена на','"'+new_request+'"','если тема неподходит, уточние запрос.')
+          print('Внимание! Тема изменена на','"'+new_request+'"','если тема неподходит, уточние запрос.')
           return request_to_search(new_request, count_of_words, coef)
   else:
     return request_to_search(category_list[0], count_of_words, coef)
-
 # Функция корректировки запроса и нахождения слов
 def request_to_search(request_word, count_of_words, coef):
     count_of_words += int(count_of_words*coef)
