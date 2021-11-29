@@ -5,6 +5,7 @@ from random import randint
 import time
 from wiki_crossword.functions.url_searcher import *
 
+#https://ru.wikipedia.org/w/api.php?action=opensearch&search=%D0%B6%D0%B8%D0%B2%D0%BE%D1%82%D0%BD%D1%8B%D0%B5%20%D0%B0%D1%84%D1%80%D0%B8%D0%BA%D0%B8&format=xml&limit=10&profile=engine_autoselect
 # Функция поиска слов
 
 def find_words(request_word, count_of_words=5, coef=0.7):
