@@ -23,7 +23,7 @@ def find_words(request_word, count_of_words=5, coef=0.7):
     items = html_tree.xpath(".//div[contains(@class,'mw-spcontent')]/ul/li/a")
     category = [i.text for i in items][0]
     if distance(category, request_word) < 2 or len(set(request_word.lower())&set(category.lower()))==len(set(request_word.lower())):
-        attention = '\rТема изменена на '+'"'+category+'"'+'. Выполняется поиск слов.'
+        attention = '\rВыполняется поиск слов на тему '+'"'+category+'".'
         sys.stdout.write(attention)
         return request_to_search(category, count_of_words, coef)
     
@@ -41,12 +41,12 @@ def find_words(request_word, count_of_words=5, coef=0.7):
       category_urls = search_category(html_tree)[0]
       category_list = search_category(html_tree)[1]
       category_list = range_category(category_list, request_word)
-      attention = '\rТема изменена на '+'"'+category_list[0]+'"'+'. Выполняется поиск слов.'
+      attention = '\rВыполняется поиск слов на тему '+'"'+category_list[0]+'".'
       sys.stdout.write(attention)
       return request_to_search(request_word, count_of_words, coef)
   except:
     if request_word in category_list:
-        attention = '\rТема изменена на '+'"'+request_word+'"'+'. Выполняется поиск слов.'
+        attention = '\rВыполняется поиск слов на тему '+'"'+request_word+'".'
         sys.stdout.write(attention)
         return request_to_search(request_word, count_of_words, coef)
     else:
@@ -56,7 +56,7 @@ def find_words(request_word, count_of_words=5, coef=0.7):
           html_tree = html.fromstring(page.decode('UTF-8'))
           new_request = html_tree.xpath(".//div[contains(@class,'mw-highlight mw-highlight-lang-xml mw-content-ltr')]/pre/text()")[10]
           
-          attention = '\rТема изменена на '+'"'+new_request+'"'+'. Выполняется поиск слов.'
+          attention = '\rВыполняется поиск слов на тему '+'"'+new_request+'".'
           sys.stdout.write(attention)
           return request_to_search(new_request, count_of_words, coef)
         
@@ -69,15 +69,15 @@ def find_words(request_word, count_of_words=5, coef=0.7):
           category_urls = search_category(html_tree)[0]
           category_list = search_category(html_tree)[1]
           category_list = range_category(category_list, request_word)
-          attention = '\rТема изменена на '+'"'+category_list[0]+'"'+'. Выполняется поиск слов.'
+          attention = '\rВыполняется поиск слов на тему '+'"'+category_list[0]+'".'
           sys.stdout.write(attention)
           return request_to_search(category_list[0], count_of_words, coef)
         except:
-          attention = '\rТема изменена на '+'"'+new_request+'"'+'. Выполняется поиск слов.'
+          attention = '\rВыполняется поиск слов на тему '+'"'+new_request+'".'
           sys.stdout.write(attention)
           return request_to_search(new_request, count_of_words, coef)
   else:
-    attention = '\rТема изменена на '+'"'+category_list[0]+'"'+'. Выполняется поиск слов.'
+    attention = '\rВыполняется поиск слов на тему '+'"'+category_list[0]+'".'
     sys.stdout.write(attention)
     return request_to_search(category_list[0], count_of_words, coef)
 # Функция корректировки запроса и нахождения слов
@@ -121,27 +121,27 @@ def append_list(list_words):
 
 # Функция поиска слов
 def searsh_words(urls, n, current_tree):
-  words_list = []
-  url_list = []
-  time_1 = time.mktime(time.gmtime())
-  while len(words_list) < n: 
-    if time.mktime(time.gmtime()) - time_1 > 30:
-      break
-    for url_under_category in urls: 
-      URL = 'https://ru.wikipedia.org/' + url_under_category
-      page = requests.get(URL).content
-      html_tree = html.fromstring(page.decode('UTF-8'))
-      words_list += get_words_urls(html_tree)[0]
-      url_list += get_words_urls(html_tree)[1]
-      words_list = list(set(words_list))
-      if len(words_list) > n:
-        break
-    urls = list(set(url_list))
-    if 15 > time.mktime(time.gmtime()) - time_1 > 8:
-      urls = search_category(current_tree)[0]
-    if 25 > time.mktime(time.gmtime()) - time_1 > 20:
-      urls = search_category(html_tree)[0]
-  return words_list
+    words_list = []
+    url_list = []
+    time_1 = time.mktime(time.gmtime())
+    while len(words_list) < n: 
+        if time.mktime(time.gmtime()) - time_1 > 30:
+            break
+        for url_under_category in urls: 
+            URL = 'https://ru.wikipedia.org/' + url_under_category
+            page = requests.get(URL).content
+            html_tree = html.fromstring(page.decode('UTF-8'))
+            words_list += get_words_urls(html_tree)[0]
+            url_list += get_words_urls(html_tree)[1]
+            words_list = list(set(words_list))
+            if len(words_list) > n:
+                break
+        urls = list(set(url_list))
+        if 15 > time.mktime(time.gmtime()) - time_1 > 8:
+            urls = search_category(current_tree)[0]
+        if 25 > time.mktime(time.gmtime()) - time_1 > 20:
+            urls = search_category(html_tree)[0]
+    return words_list
 
 # Функция для получения списка в рандомном порядке
 def random_list(words_list, count_word):
@@ -220,4 +220,3 @@ def distance(a, b):
                 change += 1
             current_row[j] = min(add, delete, change)
     return current_row[n]
-
