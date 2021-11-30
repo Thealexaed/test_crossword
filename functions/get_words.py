@@ -22,25 +22,29 @@ def find_words(request_word, count_of_words=5, coef=0.7):
     html_tree = html.fromstring(page.decode('UTF-8'))
     items = html_tree.xpath(".//div[contains(@class,'mw-spcontent')]/ul/li/a")
     category = [i.text for i in items][0]
-    if distance(category, request_word) < 2:
-        return request_to_search(request_word, count_of_words, coef)
+    if distance(category, request_word) < 2 or len(set(request_word.lower())&set(category.lower()))==len(set(request_word.lower())):
+        attention = '\rТема изменена на '+'"'+category+'"'+'. Выполняется поиск слов.'
+        sys.stdout.write(attention)
+        return request_to_search(category, count_of_words, coef)
     
     if 'Страницы значений' in category_list[0]:
-      try:
-        items = html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/ul/li/b/a")
-        request_word = [i.get('title') for i in items][0]
-      except:
+      items = html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/ul/li/b/a")
+      if len(items) < 1:
         items = html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/ul/li/a")
-        request_word = [i.get('title') for i in items][0]
+      request_word = [i.get('title') for i in items][0]
       URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(request_word)
       page = requests.get(URL).content
       html_tree = html.fromstring(page.decode('UTF-8'))
       category_urls = search_category(html_tree)[0]
       category_list = search_category(html_tree)[1]
       category_list = range_category(category_list, request_word)
-      return request_to_search(category_list[0], count_of_words, coef)
+      attention = '\rТема изменена на '+'"'+category_list[0]+'"'+'. Выполняется поиск слов.'
+      sys.stdout.write(attention)
+      return request_to_search(request_word, count_of_words, coef)
   except:
     if request_word in category_list:
+        attention = '\rТема изменена на '+'"'+request_word+'"'+'. Выполняется поиск слов.'
+        sys.stdout.write(attention)
         return request_to_search(request_word, count_of_words, coef)
     else:
         try:
@@ -48,10 +52,11 @@ def find_words(request_word, count_of_words=5, coef=0.7):
           page = requests.get(URL).content
           html_tree = html.fromstring(page.decode('UTF-8'))
           new_request = html_tree.xpath(".//div[contains(@class,'mw-highlight mw-highlight-lang-xml mw-content-ltr')]/pre/text()")[10]
-          attention = '\rВнимание! Тема изменена на '+'"'+new_request+'"'+'. Если тема не подходит, уточние запрос.'
-          #sys.stdout.write(attention)
           
+          attention = '\rТема изменена на '+'"'+new_request+'"'+'. Выполняется поиск слов.'
+          sys.stdout.write(attention)
           return request_to_search(new_request, count_of_words, coef)
+        
         except:
           new_request = search_unknown_category(request_word)
         try:
@@ -61,14 +66,16 @@ def find_words(request_word, count_of_words=5, coef=0.7):
           category_urls = search_category(html_tree)[0]
           category_list = search_category(html_tree)[1]
           category_list = range_category(category_list, request_word)
-          attention = '\rВнимание! Тема изменена на '+'"'+category_list[0]+'"'+'. Если тема не подходит, уточние запрос.'
-          #sys.stdout.write(attention)
+          attention = '\rТема изменена на '+'"'+category_list[0]+'"'+'. Выполняется поиск слов.'
+          sys.stdout.write(attention)
           return request_to_search(category_list[0], count_of_words, coef)
         except:
-          attention = '\rВнимание! Тема изменена на '+'"'+new_request+'"'+'. Если тема не подходит, уточние запрос.'
-          #sys.stdout.write(attention)
+          attention = '\rТема изменена на '+'"'+new_request+'"'+'. Выполняется поиск слов.'
+          sys.stdout.write(attention)
           return request_to_search(new_request, count_of_words, coef)
   else:
+    attention = '\rТема изменена на '+'"'+category_list[0]+'"'+'. Выполняется поиск слов.'
+    sys.stdout.write(attention)
     return request_to_search(category_list[0], count_of_words, coef)
 # Функция корректировки запроса и нахождения слов
 def request_to_search(request_word, count_of_words, coef):
@@ -167,12 +174,11 @@ def search_unknown_category(request):
         items = html_tree.xpath(".//div[contains(@class,'mw-spcontent')]/ul/li/a")
         categories += [i.text for i in items]
         
-    URL = 'https://ru.wikipedia.org/w/index.php?title=%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%9F%D0%BE%D0%B8%D1%81%D0%BA&limit=500&offset=0&profile=default&search='+url_decoder(request)
+    URL = 'https://ru.wikipedia.org/w/index.php?title=%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%9F%D0%BE%D0%B8%D1%81%D0%BA&limit=10&offset=0&profile=default&search='+url_decoder(request)
     page = requests.get(URL).content
     html_tree = html.fromstring(page.decode('UTF-8'))
     items = html_tree.xpath(".//div[contains(@class,'mw-search-result-heading')]/a")
     categories += [i.get('title') for i in items]
-    #print(categories)
 
     for category in categories:
         min_dists.append(min([distance(' '.join(words).lower(), category.lower()), distance(' '.join(words[::-1]).lower(), category.lower())]))
@@ -211,3 +217,4 @@ def distance(a, b):
                 change += 1
             current_row[j] = min(add, delete, change)
     return current_row[n]
+
