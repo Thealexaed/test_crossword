@@ -90,7 +90,7 @@ def request_to_search(request_word, count_of_words, coef):
     for item in w_list:
         if len(final_list) < count_of_words and item not in final_list:
             final_list.append(item)
-    return final_list
+    return random_list(final_list, len(final_list))
 
 # Функция фильтрации найденных слов
 def append_list(list_words):
@@ -134,7 +134,7 @@ def searsh_words(urls, n, current_tree):
   return words_list
 
 # Функция для получения списка в рандомном порядке
-def random_list(count_word, words_list):
+def random_list(words_list, count_word):
     list_random = []
     for _ in range(count_word):
         random_index = np.random.randint(0, len(words_list), 1)[0]
