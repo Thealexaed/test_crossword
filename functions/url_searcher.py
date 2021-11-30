@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 import openpyxl
 import pymorphy2
 import  re
-morph = pymorphy2.MorphAnalyzer(lang='ru')
+morph = pymorphy2.MorphAnalyzer()
 
 alphabet = 'АаБбВвГгДдЕеЁёЖжЗзИиЙйКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЭэЮюЯя'
 
@@ -72,17 +72,20 @@ def append_list(list_words):
     return list(set(new_list_words))
 
 # Нахождение URL-адресов и названий категорий и подкатегорий
-def get_words_urls(current_tree):
+def get_words_urls(current_tree, request_word):
   current_words = []
   # Названия категорий запроса
   category_list = current_tree.xpath(".//div[contains(@class,'CategoryTreeItem')]/a")
   category_words = [i.text for i in category_list]
+  category_words_range = range_category(category_words, request_word)
+  indexes_range = [category_words_range.index(category) for category in category_words]
   category_words = [
       morph.parse(word)[0].normal_form if morph.
       parse(word)[0].tag.number == 'plur' and morph.
       parse(word)[0].tag.case == 'nomn' else word for word in category_words
   ]
   urls_list = list(map(lambda x: x.get('href'), category_list))
+  urls_list = [urls_list[i] for i in indexes_range]
   # Названия подкатегорий
   under_category_list = current_tree.xpath(
       ".//div[contains(@class,'mw-category-group')]/ul/li/a"
