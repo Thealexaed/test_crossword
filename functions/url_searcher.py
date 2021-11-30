@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 import openpyxl
 import pymorphy2
 import  re
-morph = pymorphy2.MorphAnalyzer(lang='ru')
+morph = pymorphy2.MorphAnalyzer()
 
 alphabet = 'АаБбВвГгДдЕеЁёЖжЗзИиЙйКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЭэЮюЯя'
 
