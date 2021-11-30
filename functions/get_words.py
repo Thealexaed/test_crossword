@@ -49,7 +49,7 @@ def find_words(request_word, count_of_words=5, coef=0.7):
           html_tree = html.fromstring(page.decode('UTF-8'))
           new_request = html_tree.xpath(".//div[contains(@class,'mw-highlight mw-highlight-lang-xml mw-content-ltr')]/pre/text()")[10]
           attention = '\rВнимание! Тема изменена на '+'"'+new_request+'"'+'. Если тема не подходит, уточние запрос.'
-          sys.stdout.write(attention)
+          #sys.stdout.write(attention)
           
           return request_to_search(new_request, count_of_words, coef)
         except:
@@ -62,11 +62,11 @@ def find_words(request_word, count_of_words=5, coef=0.7):
           category_list = search_category(html_tree)[1]
           category_list = range_category(category_list, request_word)
           attention = '\rВнимание! Тема изменена на '+'"'+category_list[0]+'"'+'. Если тема не подходит, уточние запрос.'
-          sys.stdout.write(attention)
+          #sys.stdout.write(attention)
           return request_to_search(category_list[0], count_of_words, coef)
         except:
           attention = '\rВнимание! Тема изменена на '+'"'+new_request+'"'+'. Если тема не подходит, уточние запрос.'
-          sys.stdout.write(attention)
+          #sys.stdout.write(attention)
           return request_to_search(new_request, count_of_words, coef)
   else:
     return request_to_search(category_list[0], count_of_words, coef)
