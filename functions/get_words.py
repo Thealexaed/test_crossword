@@ -28,6 +28,9 @@ def find_words(request_word, count_of_words=5, coef=0.7):
         return request_to_search(category, count_of_words, coef)
     
     if 'Страницы значений' in category_list[0]:
+      URL = 'https://ru.wikipedia.org/wiki/'+url_decoder(request_word)
+      page = requests.get(URL).content
+      html_tree = html.fromstring(page.decode('UTF-8'))
       items = html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/ul/li/b/a")
       if len(items) < 1:
         items = html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/ul/li/a")
