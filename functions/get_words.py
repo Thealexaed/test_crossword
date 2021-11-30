@@ -80,16 +80,25 @@ def find_words(request_word, count_of_words=5, coef=0.7):
     attention = '\rВыполняется поиск слов на тему '+'"'+category_list[0]+'".'
     sys.stdout.write(attention)
     return request_to_search(category_list[0], count_of_words, coef)
+
 # Функция корректировки запроса и нахождения слов
 def request_to_search(request_word, count_of_words, coef):
     count_of_words += int(count_of_words*coef)
     URL = 'https://ru.wikipedia.org/wiki/%D0%9A%D0%B0%D1%82%D0%B5%D0%B3%D0%BE%D1%80%D0%B8%D1%8F:' + url_decoder(request_word)
     page = requests.get(URL).content
     html_tree = html.fromstring(page.decode('UTF-8'))
+    
     # Слова и ссылки основной страницы
-    words, urls = get_words_urls(html_tree)
+    words, urls = get_words_urls(html_tree, request_word)
+    if len(urls) < 1:
+        URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(request_word)
+        page = requests.get(URL).content
+        html_tree = html.fromstring(page.decode('UTF-8'))
+        
+        # Слова и ссылки основной страницы
+        words, urls = get_words_urls(html_tree, request_word)
     if len(words) < count_of_words:
-        words += searsh_words(urls, count_of_words, html_tree)
+        words = searsh_words(urls, count_of_words, html_tree, words, request_word)
     a_list = association_list(request_word)
     w_list = list(set(words))
 
@@ -120,28 +129,27 @@ def append_list(list_words):
     return list(set(new_list_words))
 
 # Функция поиска слов
-def searsh_words(urls, n, current_tree):
-    words_list = []
+def searsh_words(urls, n, current_tree, words, request_word):
     url_list = []
     time_1 = time.mktime(time.gmtime())
-    while len(words_list) < n: 
+    while len(words) < n: 
         if time.mktime(time.gmtime()) - time_1 > 30:
             break
         for url_under_category in urls: 
             URL = 'https://ru.wikipedia.org/' + url_under_category
             page = requests.get(URL).content
             html_tree = html.fromstring(page.decode('UTF-8'))
-            words_list += get_words_urls(html_tree)[0]
-            url_list += get_words_urls(html_tree)[1]
-            words_list = list(set(words_list))
-            if len(words_list) > n:
+            words += get_words_urls(html_tree, request_word)[0]
+            url_list += get_words_urls(html_tree, request_word)[1]
+            words = list(set(words))
+            if len(words) > n:
                 break
         urls = list(set(url_list))
         if 15 > time.mktime(time.gmtime()) - time_1 > 8:
             urls = search_category(current_tree)[0]
         if 25 > time.mktime(time.gmtime()) - time_1 > 20:
             urls = search_category(html_tree)[0]
-    return words_list
+    return words
 
 # Функция для получения списка в рандомном порядке
 def random_list(words_list, count_word):
