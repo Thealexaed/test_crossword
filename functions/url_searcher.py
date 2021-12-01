@@ -59,13 +59,10 @@ def append_list(list_words):
     new_list_words = []
     for word in list_words:
         if ' ' in word or '-' in word or ':' in word:
-            #print(1, word)
             continue
         if False in list(map(lambda x: True if x in alphabet else False, word)) and 'А' not in word:
-            #print(2, word)
             continue
         if len(word) < 3 or len(re.findall(r'[А-Я]', word)) > 2:
-            #print(3, word)
             continue
         else:
             new_list_words.append(word) 
@@ -74,10 +71,14 @@ def append_list(list_words):
 # Нахождение URL-адресов и названий категорий и подкатегорий
 def get_words_urls(current_tree, request_word):
   current_words = []
-  # Названия категорий запроса
-  category_list = current_tree.xpath(".//div[contains(@class,'CategoryTreeItem')]/a")
+  # Названия подкатегорий запроса
+  category_list = current_tree.xpath(".//div[contains(@class,'CategoryTreeItem')]/a") + current_tree.xpath(".//div[contains(@class,'mw-normal-catlinks')]/ul/li/a")
   category_words = [i.text for i in category_list]
+  
+
+  # Сортировка ссылок подкатегорий
   category_words_range = range_category(category_words, request_word)
+
   indexes_range = [category_words_range.index(category) for category in category_words]
   category_words = [
       morph.parse(word)[0].normal_form if morph.
@@ -86,7 +87,8 @@ def get_words_urls(current_tree, request_word):
   ]
   urls_list = list(map(lambda x: x.get('href'), category_list))
   urls_list = [urls_list[i] for i in indexes_range]
-  # Названия подкатегорий
+
+  # Названия в данной категории
   under_category_list = current_tree.xpath(
       ".//div[contains(@class,'mw-category-group')]/ul/li/a"
       ) + current_tree.xpath(
@@ -94,11 +96,25 @@ def get_words_urls(current_tree, request_word):
           )
   under_category_words = list(map(lambda x: x.get('title'), under_category_list))
   current_words = category_words + under_category_words 
+
   return append_list(current_words), urls_list
 
 # Получение URL-адресов и названий категорий и подкатегорий
-def search_category(current_tree):
+def search_category(current_tree, request_word):
   search_category_list = current_tree.xpath(".//div[contains(@class,'mw-normal-catlinks')]/ul/li/a")
   category_urls_list = list(map(lambda x: x.get('href'), search_category_list))
   category_text_list = list(map(lambda x: x.text, search_category_list))
-  return category_urls_list, category_text_list
+    
+  category_words_range = range_category(category_text_list, request_word)
+
+  indexes_range = [category_words_range.index(category) for category in category_words_range]
+
+  category_words_range = [
+      morph.parse(word)[0].normal_form if morph.
+      parse(word)[0].tag.number == 'plur' and morph.
+      parse(word)[0].tag.case == 'nomn' else word for word in category_words_range
+  ]
+
+  category_urls_list = [category_urls_list[i] for i in indexes_range]
+
+  return category_urls_list, category_words_range
