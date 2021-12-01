@@ -12,7 +12,7 @@ def definition_search(words):
         page = requests.get(URL).content
         html_tree = html.fromstring(page.decode('UTF-8'))
 
-        category_list = search_category(html_tree)[1]
+        category_list = search_category(html_tree, word)[1]
 
         try:
             if category_list[0] == 'Страницы значений по алфавиту':
