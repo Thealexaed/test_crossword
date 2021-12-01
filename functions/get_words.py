@@ -9,13 +9,16 @@ from wiki_crossword.functions.url_searcher import *
 # Функция поиска слов
 
 def find_words(request_word, count_of_words=5, coef=0.7):
-  URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(request_word)
-  page = requests.get(URL).content
-  html_tree = html.fromstring(page.decode('UTF-8'))
-  category_urls = search_category(html_tree)[0]
-  category_list = search_category(html_tree)[1]
-  category_list = range_category(category_list, request_word)
-    
+
+  try:
+    URL = 'https://ru.wikipedia.org/w/api.php?action=opensearch&profile=engine_autoselect&format=json&search='+url_decoder(request_word)
+    word_new = requests.get(URL).json()[1][0]
+    return request_to_search(word_new, count_of_words, coef)
+  except:
+    URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(request_word)
+    page = requests.get(URL).content
+    html_tree = html.fromstring(page.decode('UTF-8'))
+    category_list = search_category(html_tree, request_word)[1]
   try:
     URL = 'https://ru.wikipedia.org/wiki/%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%9A%D0%B0%D1%82%D0%B5%D0%B3%D0%BE%D1%80%D0%B8%D0%B8?from='+url_decoder(request_word)
     page = requests.get(URL).content
@@ -38,9 +41,7 @@ def find_words(request_word, count_of_words=5, coef=0.7):
       URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(request_word)
       page = requests.get(URL).content
       html_tree = html.fromstring(page.decode('UTF-8'))
-      category_urls = search_category(html_tree)[0]
-      category_list = search_category(html_tree)[1]
-      category_list = range_category(category_list, request_word)
+      category_list = search_category(html_tree, request_word)[1]
       attention = '\rВыполняется поиск слов на тему '+'"'+category_list[0]+'".'
       sys.stdout.write(attention)
       return request_to_search(request_word, count_of_words, coef)
@@ -66,8 +67,7 @@ def find_words(request_word, count_of_words=5, coef=0.7):
           URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(new_request)
           page = requests.get(URL).content
           html_tree = html.fromstring(page.decode('UTF-8'))
-          category_urls = search_category(html_tree)[0]
-          category_list = search_category(html_tree)[1]
+          category_list = search_category(html_tree, request_word)[1]
           category_list = range_category(category_list, request_word)
           attention = '\rВыполняется поиск слов на тему '+'"'+category_list[0]+'".'
           sys.stdout.write(attention)
@@ -84,29 +84,51 @@ def find_words(request_word, count_of_words=5, coef=0.7):
 # Функция корректировки запроса и нахождения слов
 def request_to_search(request_word, count_of_words, coef):
     count_of_words += int(count_of_words*coef)
-    URL = 'https://ru.wikipedia.org/wiki/%D0%9A%D0%B0%D1%82%D0%B5%D0%B3%D0%BE%D1%80%D0%B8%D1%8F:' + url_decoder(request_word)
+    URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(request_word)
     page = requests.get(URL).content
     html_tree = html.fromstring(page.decode('UTF-8'))
     
-    # Слова и ссылки основной страницы
-    words, urls = get_words_urls(html_tree, request_word)
-    if len(urls) < 1:
-        URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(request_word)
+    # Cлова основной страницы
+    words_page = parse_items(request_word)
+
+    # Названия и ссылки категорий основной страницы
+    urls_category_page, words_category_page = search_category(html_tree, request_word)
+
+    words_category_page = range_category(words_category_page, request_word)
+
+    # Слова и ссылки подкатегорий
+    URL = 'https://ru.wikipedia.org/wiki/%D0%9A%D0%B0%D1%82%D0%B5%D0%B3%D0%BE%D1%80%D0%B8%D1%8F:' + url_decoder(words_category_page[0])
+    page = requests.get(URL).content
+    html_tree = html.fromstring(page.decode('UTF-8'))
+    words_under_category, urls_under_category = get_words_urls(html_tree, request_word)
+
+    if len(urls_under_category) < 1:
+        URL = 'https://ru.wikipedia.org/wiki/%D0%9A%D0%B0%D1%82%D0%B5%D0%B3%D0%BE%D1%80%D0%B8%D1%8F:' + url_decoder(request_word)
         page = requests.get(URL).content
         html_tree = html.fromstring(page.decode('UTF-8'))
-        
-        # Слова и ссылки основной страницы
-        words, urls = get_words_urls(html_tree, request_word)
+        words_under_category, urls_under_category = get_words_urls(html_tree, request_word)
+
+    urls = urls_under_category + urls_category_page
+
+
+    words = list(set(words_under_category + words_page))
+
     if len(words) < count_of_words:
         words = searsh_words(urls, count_of_words, html_tree, words, request_word)
+    
     a_list = association_list(request_word)
+
     w_list = list(set(words))
 
     a_list = [i.lower() for i in a_list]
     w_list = [i.lower() for i in w_list]
-    w_list.sort(key=len)
-    final_list = final_list = list(set(a_list)&set(w_list))
+
+    final_list = list(set(a_list)&set(w_list))
+
+    #w_list.sort(key=len)
+
     for item in w_list:
+        
         if len(final_list) < count_of_words and item not in final_list:
             final_list.append(item)
     return random_list(final_list, len(final_list))
@@ -116,13 +138,10 @@ def append_list(list_words):
     new_list_words = []
     for word in list_words:
         if ' ' in word or '-' in word or ':' in word:
-            #print(1, word)
             continue
         if False in list(map(lambda x: True if x in alphabet else False, word)) and 'А' not in word:
-            #print(2, word)
             continue
         if len(word) < 3 or len(re.findall(r'[А-Я]', word)) > 2:
-            #print(3, word)
             continue
         else:
             new_list_words.append(word) 
@@ -137,11 +156,13 @@ def searsh_words(urls, n, current_tree, words, request_word):
             break
         for url_under_category in urls: 
             URL = 'https://ru.wikipedia.org/' + url_under_category
+            #print(URL)
             page = requests.get(URL).content
             html_tree = html.fromstring(page.decode('UTF-8'))
             words += get_words_urls(html_tree, request_word)[0]
             url_list += get_words_urls(html_tree, request_word)[1]
             words = list(set(words))
+            #print(words)
             if len(words) > n:
                 break
         urls = list(set(url_list))
@@ -154,11 +175,12 @@ def searsh_words(urls, n, current_tree, words, request_word):
 # Функция для получения списка в рандомном порядке
 def random_list(words_list, count_word):
     list_random = []
-    for _ in range(count_word):
+    while len(list_random) < count_word:
         random_index = np.random.randint(0, len(words_list), 1)[0]
         random_word = words_list[random_index]
         if random_word not in list_random:
             list_random.append(random_word)
+            words_list.remove(random_word)
     return list_random
 
 def search_unknown_category(request):
@@ -228,3 +250,38 @@ def distance(a, b):
                 change += 1
             current_row[j] = min(add, delete, change)
     return current_row[n]
+
+
+def get_content_text(word):
+
+    URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(word)
+    page = requests.get(URL).content
+    html_tree = html.fromstring(page.decode('UTF-8'))
+    text_items = html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/*")
+    try:
+        URL = 'https://ru.wikipedia.org/w/api.php?action=parse&prop=categories&format=json&page=' + url_decoder(word)
+        page = requests.get(URL).json()['parse']['categories']
+        category_items = [i['*'] for i in page]
+    except:
+        category_items = []
+    items = text_items + category_items
+    new_item = str()
+    for item in items:
+        try:
+            new_item += item.text
+        except:
+            continue
+    return new_item
+
+def parse_items(word_request):
+    URL = 'https://ru.wikipedia.org/w/api.php?action=parse&prop=links&format=json&page=' + url_decoder(word_request)
+    page = requests.get(URL).json()['parse']['links']
+    words_page = [i['*'] for i in page]
+
+    page_words_list = []
+
+    for i, word in enumerate(words_page):
+
+        if len(append_list([word,])) > 0 and word_request.lower()[:-2] in get_content_text(word) and 'государство' not in get_content_text(word):
+            page_words_list.append(word)
+    return page_words_list
