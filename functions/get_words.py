@@ -96,13 +96,11 @@ def find_words(request_word, count_of_words=5, coef=0.3):
               try:
                 items = html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/ul/li/b/a")
                 new_title = [i.get('title') for i in items][0]
-                print(new_title)
                 return request_to_search(new_title, count_of_words, coef, user_request)
 
               except:
                 items = html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/ul/li/a")
                 new_title = [i.get('title') for i in items][0]
-                print(new_title)
                 return request_to_search(new_title, count_of_words, coef, user_request)
 
         except:
