@@ -311,12 +311,17 @@ def list_coord_append(base_list, new_list):
 
 # Функция печати кроссворда
 def print_words(words, n_words=None, definitions=dict(), random_sort=True, answers=True, plot=True, request_word=str(), difficult=int()):
+    
     if n_words == None:
-      n_words = len(words)
+        n_words = len(words)
+    if n_words > len(words):
+        n_words = len(words)
+        sys.stdout.write(f'\rЧисло найденных слов - {len(words)}.')
+        
     #if n_words > len(words):
     #  sys.stdout.write(f'\rОбщее число найденных слов - {len(words)}. Задано при построении - {n_words}!')
     #  return None
-    sys.stdout.write(f'\rЧисло найденных слов - {len(words)}.')
+    
     number_of_try = 0
     
     visible = answers
