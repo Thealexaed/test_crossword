@@ -7,6 +7,15 @@ import time
 from wiki_crossword.functions.url_searcher import *
 import string
 from IPython.display import clear_output
+import matplotlib.pyplot as plt
+from wiki_crossword.functions.get_definitions import *
+
+
+from wiki_crossword.functions.crossword_plotter import *
+import pymorphy2
+morph = pymorphy2.MorphAnalyzer()
+from IPython import display
+import matplotlib
 
 def print_fact(text):
     clear_output()
