@@ -78,7 +78,6 @@ def get_words_urls(current_tree, request_word):
 
   # Сортировка ссылок подкатегорий
   category_words_range = range_category(category_words, request_word)
-
   indexes_range = [category_words_range.index(category) for category in category_words]
   category_words = [
       morph.parse(word)[0].normal_form if morph.
