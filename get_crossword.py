@@ -1,5 +1,6 @@
 # Функция получения входных данных и построения кроссворда
 import sys
+from IPython.display import clear_output
 from wiki_crossword.functions.get_words import find_words
 from wiki_crossword.functions.get_definitions import definition_search
 from wiki_crossword.functions.crossword_plotter import print_words
