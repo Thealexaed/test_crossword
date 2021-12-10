@@ -83,7 +83,7 @@ def definition_search(words, dict_titles):
          
 
 
-
+        print(definition)
         # Поиск имен
         re_one = r'[А-Я]. [А-Я]. [А-Я]\w+'
         re_two = r'[А-Я]. [А-Я]\w+'
@@ -107,11 +107,13 @@ def definition_search(words, dict_titles):
             definition = definition.replace('Это ', '- ')
         
         try:
-            if '(' in definition.lower() and definition.lower().index('(') < len(word)*2+20:
+            if '(' in definition.lower() and definition.lower().index('(') < len(word)*2:
                 index_finish_0 = definition.index(')')+1
                 definition_new = definition[index_finish_0:]
                 if len(definition_new) < 5:
                     definition = definition
+                else:
+                    definition = definition_new
         except:
             definition = definition
         
