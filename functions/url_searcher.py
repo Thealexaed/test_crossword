@@ -12,10 +12,6 @@ alphabet = 'АаБбВвГгДдЕеЁёЖжЗзИиЙйКкЛлМмНнОоПп
 
 category_url = 'https://ru.wikipedia.org/wiki/%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%9A%D0%B0%D1%82%D0%B5%D0%B3%D0%BE%D1%80%D0%B8%D0%B8?from='
 word_url = 'https://ru.wikipedia.org/wiki/'
-assotioation_url = [
-  'https://wordassociations.net/ru/%D0%B0%D1%81%D1%81%D0%BE%D1%86%D0%B8%D0%B0%D1%86%D0%B8%D0%B8-%D0%BA-%D1%81%D0%BB%D0%BE%D0%B2%D1%83/',
-   '?button=%D0%9D%D0%B0%D0%B9%D1%82%D0%B8'
-   ]
 
 # Функция кодирования символов из кирилицы в формат URL
 def url_decoder(word):
@@ -29,10 +25,10 @@ def url_encoder(url):
 
 # Нахождение ассоциативных слов
 def association_list(word):
-    URL = assotioation_url[0] + word+assotioation_url[1]
+    URL = 'https://wordassociation.ru/' + url_decoder(word)
     page = requests.get(URL).content
     html_tree = html.fromstring(page.decode('UTF-8'))
-    items = html_tree.xpath(".//div[contains(@class,'section NOUN-SECTION')]/ul/li/a")
+    items = html_tree.xpath(".//div[contains(@class,'row')]/ol/li/span")
     return [i.text for i in items]
 
 # Сортировка категорий
