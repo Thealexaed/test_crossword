@@ -4,7 +4,7 @@ from wiki_crossword.functions.get_words import find_words
 from wiki_crossword.functions.get_definitions import definition_search
 from wiki_crossword.functions.crossword_plotter import print_words
 
-def get_crossword(request_word, count_of_words, print_answers, difficult):
+def get_crossword(request_word, count_of_words=5, print_answers=False, difficult='Очень сложно'):
   difficult_dict = {
     'Легко':1,
     'Средне':0.6,
@@ -35,20 +35,23 @@ def final_def(word, count_of_words, print_answers, difficult):
       words = [word.strip() for word in words]
       request_word = 'Своя тема'
     else:
-      words = find_words(word, count_of_words)
+      words, dict_titles = find_words(word, count_of_words)
       request_word = word
     words = [i.lower() for i in words]
+
     if word.lower() not in words and ' ' not in word:
       words.append(word.lower())
     
     text = '\rИщу определения к словам...'
     sys.stdout.write(text)
-    definitions = definition_search(words)
+
+    definitions = definition_search(words, dict_titles)
+    
     words = list(definitions.keys())
 
     text = '\rИдет построение сканворда...'
     sys.stdout.write(text)
-
+    clear_output()
     print_words(words,
                 n_words = count_of_words,
                 random_sort=True,
