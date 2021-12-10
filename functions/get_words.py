@@ -5,6 +5,8 @@ from lxml import html
 from random import randint
 import time
 from wiki_crossword.functions.url_searcher import *
+import string
+from IPython.display import clear_output
 
 def print_fact(text):
     clear_output()
