@@ -84,13 +84,35 @@ def get_facts(request_word):
 def find_words(request_word, count_of_words=5, coef=0.3):
     user_request = request_word
     try:
-        # Поиск страницы
-        URL = 'https://ru.wikipedia.org/w/index.php?search='+url_decoder(request_word).replace('_','+')+'&title=%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%9F%D0%BE%D0%B8%D1%81%D0%BA&profile=advanced&fulltext=1&ns0=1&searchToken=8i9o18hyjykfrnyfsle42py32'
-        page = requests.get(URL).content
-        html_tree = html.fromstring(page.decode('UTF-8'))
-        items = html_tree.xpath(".//div[contains(@class,'mw-search-result-heading')]/a")
-        new_title = [i.get('title') for i in items][0]
-        return request_to_search(new_title, count_of_words, coef, user_request)
+        try:
+            URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(request_word)
+            page = requests.get(URL).content
+            html_tree = html.fromstring(page.decode('UTF-8'))
+            category_urls = search_category(html_tree, request_word)[0]
+            category_list = search_category(html_tree, request_word)[1]
+            category_list = range_category(category_list, request_word)
+
+            if 'Страницы значений' in category_list[0]:
+              try:
+                items = html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/ul/li/b/a")
+                new_title = [i.get('title') for i in items][0]
+                print(new_title)
+                return request_to_search(new_title, count_of_words, coef, user_request)
+
+              except:
+                items = html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/ul/li/a")
+                new_title = [i.get('title') for i in items][0]
+                print(new_title)
+                return request_to_search(new_title, count_of_words, coef, user_request)
+
+        except:
+            # Поиск страницы
+            URL = 'https://ru.wikipedia.org/w/index.php?search='+url_decoder(request_word).replace('_','+')+'&title=%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%9F%D0%BE%D0%B8%D1%81%D0%BA&profile=advanced&fulltext=1&ns0=1&searchToken=8i9o18hyjykfrnyfsle42py32'
+            page = requests.get(URL).content
+            html_tree = html.fromstring(page.decode('UTF-8'))
+            items = html_tree.xpath(".//div[contains(@class,'mw-search-result-heading')]/a")
+            new_title = [i.get('title') for i in items][0]
+            return request_to_search(new_title, count_of_words, coef, user_request)
         # Поиск категории
     except:
         URL = 'https://ru.wikipedia.org/w/index.php?search='+url_decoder(request_word).replace('_','+')+'&title=%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%9F%D0%BE%D0%B8%D1%81%D0%BA&profile=advanced&fulltext=1&ns14=1'
