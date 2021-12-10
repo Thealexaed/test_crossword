@@ -193,10 +193,13 @@ def sort_definitions(definotions):
 
 def cutter_text(text, width=60):
     i = 0
-    while [max(len(x) for x in text.split('\n'))][0] > width+15:
-        index_reset = text.split('\n')[i][width:].index(' ')+width + len(text) - len(text.split('\n')[i])
-        text = text[:index_reset]+text[index_reset:index_reset+1].replace(' ', '\n')+'\t\t\t\t'+text[index_reset+1:]
-        i += 1
+    try:
+        while [max(len(x) for x in text.split('\n'))][0] > width+15:
+            index_reset = text.split('\n')[i][width:].index(' ')+width + len(text) - len(text.split('\n')[i])
+            text = text[:index_reset]+text[index_reset:index_reset+1].replace(' ', '\n')+'\t\t\t\t'+text[index_reset+1:]
+            i += 1
+    except:
+        return None
     return text
 
 # Функция предобработки определений
