@@ -80,10 +80,7 @@ def definition_search(words, dict_titles):
                 definition = definition.replace(definition[index_bracket_0: index_bracket_1],'')
         except:
             pass
-         
-
-
-        print(definition)
+      
         # Поиск имен
         re_one = r'[А-Я]. [А-Я]. [А-Я]\w+'
         re_two = r'[А-Я]. [А-Я]\w+'
