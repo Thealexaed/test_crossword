@@ -2,13 +2,16 @@ import  re
 from wiki_crossword.functions.url_searcher import *
 
 # Функция поиска определений
-def definition_search(words):
+def definition_search(words, dict_titles):
     list_def = []
     list_simplicity = []
     dict_def = dict()
     name=str()
     for word in words:
-        URL = word_url+url_decoder(word.lower())    
+        if word in dict_titles.keys():
+            URL = word_url+url_decoder(dict_titles[word]) 
+        else:
+            URL = word_url+url_decoder(word.lower())    
         page = requests.get(URL).content
         html_tree = html.fromstring(page.decode('UTF-8'))
 
