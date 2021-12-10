@@ -44,14 +44,14 @@ def get_unknown_category(request_word):
     return category
 
 def get_facts(request_word):
-    pre_words = ['Кстати, а Вы знали?...\n\n   ',
-                 'Пока ищу слова, стоит узнать, что...\n\n   ',
-                 'Возможно, это подкачает Вашу эрудицию...\n\n   ',
-                 'Оказывается, что...\n\n   ',
-                 'Интересно, а Вы знали, что...\n\n   ',
-                 'Спорим, Вы не знали про то, что...\n\n   ',
-                 'Взгляните на интересный факт...\n\n   ',
-                 'Нашёл факт по Вашей теме...\n\n   ']
+    pre_words = ['Продолжаю искать!...\n\n   ',
+                 'Уже почти закончил поиск...\n\n   ',
+                 'Тема не такая простая как кажется...\n\n   ',
+                 'Стараюсь искать максимально подходящие слова...\n\n   ',
+                 'Пока гулял по страницам, вот что нашел...\n\n   ',
+                 'Может будет интересно...\n\n   ',
+                 'Не мог не рассказать о том что...\n\n   ',
+                 'Занятная выдержка по вашей теме...\n\n   ']
     facts = []
     URL = 'https://ru.wikipedia.org/wiki/'+url_decoder(request_word)
     page = requests.get(URL).content
@@ -72,12 +72,12 @@ def get_facts(request_word):
         #clear = '(Факт о ' + ' '.join([morph.parse(w)[0].inflect({'loct'}).word if i < 2 else w for i, w in enumerate(request_word.split(' '))]) + ')'
     #except:
         #clear = '(Факт о "' + request_word + '")'
-    clear = '(Факт на тему "' + request_word + '")'
+    clear = '(Пара слов на тему "' + request_word + '")'
     for i, fact in enumerate(facts):
         pre_words[randint(0,len(pre_words)-1)]
         fact = '    ' + pre_words[randint(0,len(pre_words)-1)] + ' ' + fact
         length = max([len(i) for i in fact.split('\n')])
-        facts[i] = fact + "\n" + "_" * length + '\n' + ' ' * ((length - len(clear)) * 2) + clear
+        facts[i] = "_" * length + '\n' + fact + "\n" + "_" * length + '\n' + ' ' * ((length - len(clear)) * 2) + clear
 
     return facts
 
