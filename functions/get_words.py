@@ -137,7 +137,8 @@ def request_to_search(request_word, count_of_words, coef, user_request):
     dict_titles = dict()
     # Если запрос не имеет общих слов с названием найденной страницы/категории
     # То сначала производится поиск слов по найденной странице
-    if len(set(set(request_word.split(' ')) & set(user_request.split(' ')))) == 0:
+    if len(set(set(request_word.split(' ')) & set(user_request.split(' ')))) == 0 and\
+       len(set(user_request)) / len(set(user_request) & set(request_word)) < 0.7:
         sys.stdout.write('\rКажется, запрос немного непростой. Дайте минуточку...')
         words_page, dict_titles = parse_items(request_word, count_of_words, user_request)
         if len(words_page) < 2:
