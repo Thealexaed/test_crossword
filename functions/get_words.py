@@ -6,132 +6,472 @@ from random import randint
 import time
 from wiki_crossword.functions.url_searcher import *
 
-# Функция поиска слов
+def print_fact(text):
+    clear_output()
+    fig, ax = plt.subplots()
+    ax.axis('off')
+    ax.text(0, 1, text, fontsize=20)
+    plt.show()
 
-def find_words(request_word, count_of_words=5, coef=0.7):
+def get_category_item(title):
+    except_list = 'алфави статьи вики'
+    raw_category_item = get_raw_category(title)
+    raw_category_item = ' '.join(raw_category_item)
+    raw_category_item = raw_category_item.lower()
+    raw_category_item = raw_category_item.split(' ')
+    raw_category_item = list(set([item[:-2] if len(item) > 5 else item.lower()[:-1] if len(item) > 4 else item.lower() for item in raw_category_item]))
+    [raw_category_item.remove(item) if len(item) < 3 else None for item in raw_category_item]
+    [raw_category_item.remove(item) if item in except_list else None for item in raw_category_item]
+    return raw_category_item
 
-  try:
-    URL = 'https://ru.wikipedia.org/w/api.php?action=opensearch&profile=engine_autoselect&format=json&search='+url_decoder(request_word)
-    word_new = requests.get(URL).json()[1][0]
-    return request_to_search(word_new, count_of_words, coef)
-  except:
-    URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(request_word)
+def get_unknown_category(request_word): 
+    URL = 'https://ru.wikipedia.org/w/index.php?search='+url_decoder(request_word).replace('_','+')+'&title=%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%9F%D0%BE%D0%B8%D1%81%D0%BA&profile=advanced&fulltext=1&ns14=1'
     page = requests.get(URL).content
     html_tree = html.fromstring(page.decode('UTF-8'))
-    category_list = search_category(html_tree, request_word)[1]
-  try:
-    URL = 'https://ru.wikipedia.org/wiki/%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%9A%D0%B0%D1%82%D0%B5%D0%B3%D0%BE%D1%80%D0%B8%D0%B8?from='+url_decoder(request_word)
+    items = html_tree.xpath(".//div[contains(@class,'mw-search-result-heading')]/a")
+    category = [i.get('title') for i in items][0]
+    return category
+
+def get_facts(request_word):
+    pre_words = ['Кстати, а Вы знали?...\n\n   ',
+                 'Пока ищу слова, стоит узнать, что...\n\n   ',
+                 'Возможно, это подкачает Вашу эрудицию...\n\n   ',
+                 'Оказывается, что...\n\n   ',
+                 'Интересно, а Вы знали, что...\n\n   ',
+                 'Спорим, Вы не знали про то, что...\n\n   ',
+                 'Взгляните на интересный факт...\n\n   ',
+                 'Нашёл факт по Вашей теме...\n\n   ']
+    facts = []
+    URL = 'https://ru.wikipedia.org/wiki/'+url_decoder(request_word)
     page = requests.get(URL).content
     html_tree = html.fromstring(page.decode('UTF-8'))
-    items = html_tree.xpath(".//div[contains(@class,'mw-spcontent')]/ul/li/a")
-    category = [i.text for i in items][0]
-    if distance(category, request_word) < 2 or len(set(request_word.lower())&set(category.lower()))==len(set(request_word.lower())):
-        attention = '\rВыполняется поиск слов на тему '+'"'+category+'".'
-        sys.stdout.write(attention)
-        return request_to_search(category, count_of_words, coef)
-    
-    if 'Страницы значений' in category_list[0]:
-      URL = 'https://ru.wikipedia.org/wiki/'+url_decoder(request_word)
-      page = requests.get(URL).content
-      html_tree = html.fromstring(page.decode('UTF-8'))
-      items = html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/ul/li/b/a")
-      if len(items) < 1:
-        items = html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/ul/li/a")
-      request_word = [i.get('title') for i in items][0]
-      URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(request_word)
-      page = requests.get(URL).content
-      html_tree = html.fromstring(page.decode('UTF-8'))
-      category_list = search_category(html_tree, request_word)[1]
-      attention = '\rВыполняется поиск слов на тему '+'"'+category_list[0]+'".'
-      sys.stdout.write(attention)
-      return request_to_search(request_word, count_of_words, coef)
-  except:
-    if request_word in category_list:
-        attention = '\rВыполняется поиск слов на тему '+'"'+request_word+'".'
-        sys.stdout.write(attention)
-        return request_to_search(request_word, count_of_words, coef)
-    else:
+    items = html_tree.findall(".//p")
+    texts = [i.text for i in items]
+    for text in texts:
         try:
-          URL = 'https://ru.wikipedia.org/w/api.php?action=opensearch&search='+url_decoder(request_word)+'&format=xmlfm&limit=10&profile=engine_autoselect'
-          page = requests.get(URL).content
-          html_tree = html.fromstring(page.decode('UTF-8'))
-          new_request = html_tree.xpath(".//div[contains(@class,'mw-highlight mw-highlight-lang-xml mw-content-ltr')]/pre/text()")[10]
-          
-          attention = '\rВыполняется поиск слов на тему '+'"'+new_request+'".'
-          sys.stdout.write(attention)
-          return request_to_search(new_request, count_of_words, coef)
-        
+            if '. ' in text and len(text.split('. ')[0]) > 100:
+                text = text.replace('\xa0—', '')
+                text = text.replace('\xa0', '')
+                text = cutter_text(text)
+                facts.append(text.split('. ')[0]+'.')
         except:
-          new_request = search_unknown_category(request_word)
-        try:
-          URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(new_request)
-          page = requests.get(URL).content
-          html_tree = html.fromstring(page.decode('UTF-8'))
-          category_list = search_category(html_tree, request_word)[1]
-          category_list = range_category(category_list, request_word)
-          attention = '\rВыполняется поиск слов на тему '+'"'+category_list[0]+'".'
-          sys.stdout.write(attention)
-          return request_to_search(category_list[0], count_of_words, coef)
-        except:
-          attention = '\rВыполняется поиск слов на тему '+'"'+new_request+'".'
-          sys.stdout.write(attention)
-          return request_to_search(new_request, count_of_words, coef)
-  else:
-    attention = '\rВыполняется поиск слов на тему '+'"'+category_list[0]+'".'
-    sys.stdout.write(attention)
-    return request_to_search(category_list[0], count_of_words, coef)
+            continue
+
+    #try:
+        #clear = '(Факт о ' + ' '.join([morph.parse(w)[0].inflect({'loct'}).word if i < 2 else w for i, w in enumerate(request_word.split(' '))]) + ')'
+    #except:
+        #clear = '(Факт о "' + request_word + '")'
+    clear = '(Факт на тему "' + request_word + '")'
+    for i, fact in enumerate(facts):
+        pre_words[randint(0,len(pre_words)-1)]
+        fact = '    ' + pre_words[randint(0,len(pre_words)-1)] + ' ' + fact
+        length = max([len(i) for i in fact.split('\n')])
+        facts[i] = fact + "\n" + "_" * length + '\n' + ' ' * ((length - len(clear)) * 2) + clear
+
+    return facts
+
+def find_words(request_word, count_of_words=5, coef=0.3):
+    user_request = request_word
+    try:
+        # Поиск страницы
+        URL = 'https://ru.wikipedia.org/w/index.php?search='+url_decoder(request_word).replace('_','+')+'&title=%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%9F%D0%BE%D0%B8%D1%81%D0%BA&profile=advanced&fulltext=1&ns0=1&searchToken=8i9o18hyjykfrnyfsle42py32'
+        page = requests.get(URL).content
+        html_tree = html.fromstring(page.decode('UTF-8'))
+        items = html_tree.xpath(".//div[contains(@class,'mw-search-result-heading')]/a")
+        new_title = [i.get('title') for i in items][0]
+        return request_to_search(new_title, count_of_words, coef, user_request)
+        # Поиск категории
+    except:
+        URL = 'https://ru.wikipedia.org/w/index.php?search='+url_decoder(request_word).replace('_','+')+'&title=%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%9F%D0%BE%D0%B8%D1%81%D0%BA&profile=advanced&fulltext=1&ns14=1'
+        page = requests.get(URL).content
+        html_tree = html.fromstring(page.decode('UTF-8'))
+        items = html_tree.xpath(".//div[contains(@class,'mw-search-result-heading')]/a")
+        category = [i.get('title') for i in items][0]
+        return request_to_search(category, count_of_words, coef, user_request)
+
 
 # Функция корректировки запроса и нахождения слов
-def request_to_search(request_word, count_of_words, coef):
+def request_to_search(request_word, count_of_words, coef, user_request):
     count_of_words += int(count_of_words*coef)
     URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(request_word)
     page = requests.get(URL).content
     html_tree = html.fromstring(page.decode('UTF-8'))
-    
-    # Cлова основной страницы
-    words_page = parse_items(request_word)
+    words_page = []
+    words_page_two = []
+    words_search = []
+    search_page = False
+    new_request_word = str()
+    dict_titles = dict()
+    # Если запрос не имеет общих слов с названием найденной страницы/категории
+    # То сначала производится поиск слов по найденной странице
+    if len(set(set(request_word.split(' ')) & set(user_request.split(' ')))) == 0:
+        sys.stdout.write('\rКажется, запрос немного непростой. Дайте минуточку...')
+        words_page, dict_titles = parse_items(request_word, count_of_words, user_request)
+        if len(words_page) < 2:
+            try:
+                new_request_word = get_unknown_category(user_request)
+            except:
+                new_request_word = search_unknown_category(user_request)
+            sys.stdout.write('\rПопробую поискать на странице ' + new_request_word)
+            words_page, dict_titles = parse_items(new_request_word, count_of_words, user_request)
+        search_page = True
+
+    if len(words_page) >= count_of_words:
+        return words_page, dict_titles
+
+    if len(new_request_word) > 1:
+        request_word = new_request_word
+        URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(request_word)
+        page = requests.get(URL).content
+        html_tree = html.fromstring(page.decode('UTF-8'))
 
     # Названия и ссылки категорий основной страницы
     urls_category_page, words_category_page = search_category(html_tree, request_word)
 
     words_category_page = range_category(words_category_page, request_word)
 
+
     # Слова и ссылки подкатегорий
     URL = 'https://ru.wikipedia.org/wiki/%D0%9A%D0%B0%D1%82%D0%B5%D0%B3%D0%BE%D1%80%D0%B8%D1%8F:' + url_decoder(words_category_page[0])
     page = requests.get(URL).content
     html_tree = html.fromstring(page.decode('UTF-8'))
-    words_under_category, urls_under_category = get_words_urls(html_tree, request_word)
+    words, urls_under_category = get_words_urls(html_tree, request_word)
 
     if len(urls_under_category) < 1:
         URL = 'https://ru.wikipedia.org/wiki/%D0%9A%D0%B0%D1%82%D0%B5%D0%B3%D0%BE%D1%80%D0%B8%D1%8F:' + url_decoder(request_word)
         page = requests.get(URL).content
         html_tree = html.fromstring(page.decode('UTF-8'))
-        words_under_category, urls_under_category = get_words_urls(html_tree, request_word)
+        words, urls_under_category = get_words_urls(html_tree, request_word)
+    
 
     urls = urls_under_category + urls_category_page
 
-
-    words = list(set(words_under_category + words_page))
+    if len(words) < count_of_words and search_page == False:
+        count_of_words_for_search = count_of_words - len(words)
+        # Cлова основной страницы
+        sys.stdout.write('\r Ищу слова на странице википедии...')
+        words_page_two, dict_titles = parse_items(request_word, count_of_words_for_search, user_request)
+    
+    words = [i.lower() for i in words]
+    words = list(set(words + words_page + words_page_two))
 
     if len(words) < count_of_words:
-        words = searsh_words(urls, count_of_words, html_tree, words, request_word)
+        sys.stdout.write('\r Кажется найденных слов недостаточно... Подключаю специальные алгоритмы для поиска!')
+        words_search = searsh_words(urls, count_of_words, html_tree, words, request_word)
+
+    final_list = list(set([i.lower() for i in words]))
     
     a_list = association_list(request_word)
-
-    w_list = list(set(words))
+    
+    words_search = list(set(words_search))
 
     a_list = [i.lower() for i in a_list]
-    w_list = [i.lower() for i in w_list]
+    words_search = [i.lower() for i in words_search]
 
-    final_list = list(set(a_list)&set(w_list))
 
-    #w_list.sort(key=len)
+    search_list = list(set(a_list)|set(words_search))
 
-    for item in w_list:
-        
+    for item in search_list:
         if len(final_list) < count_of_words and item not in final_list:
             final_list.append(item)
-    return random_list(final_list, len(final_list))
+    sys.stdout.write('\r Слова найдены!')   
+    return random_list(final_list, len(final_list)), dict_titles
+
+def get_title(word_request):
+    abc = string.ascii_letters
+    URL = 'https://ru.wikipedia.org/w/api.php?action=opensearch&search='+url_decoder(word_request)+'&format=json'
+    new_url = requests.get(URL).json()[3][0]
+    page = requests.get(new_url).content
+    html_tree = html.fromstring(page.decode('UTF-8'))
+    items = html_tree.xpath(".//h1[contains(@class,'firstHeading')]")[0]
+    word = items.text
+
+    try:
+        if len(word.split(' ')) > len(word_request.split(' ')):
+            word = word_request
+    except:
+        return None
+
+    if any([i in abc for i in word]) == True:
+        word = word_request
+    if any([i in abc for i in word]) == True:
+        return None
+    return word
+
+
+def parse_items(word_request, count_of_words, user_word_request):
+    
+    facts = get_facts(word_request)
+    time_1 = time.mktime(time.gmtime())
+    delta = 10
+    
+    URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(word_request)
+    page = requests.get(URL).content
+    html_tree = html.fromstring(page.decode('UTF-8'))
+    items = html_tree.findall(".//a")
+    words_page = filter_items(items)
+    page_words_list = []
+    common_categories = []
+    new_target_words = []
+    control_page_words_list = []
+    common_words = []
+    dict_items = dict()
+    word_for_facts = ''
+    if len(user_word_request.split(' ')) > 1:
+        target_words = user_word_request.split(' ')
+        target_words = [
+        item.lower()[:-2] if len(item) > 5 else item.lower()[:-1] if len(item) >= 4 else item.lower() for item in target_words
+                        ]
+        user_words = target_words
+        
+        for word in target_words:
+            if word not in word_request.lower():
+                new_target_words.append(word)
+        if len(new_target_words) > 0:
+            target_words = new_target_words
+        for title in words_page:
+            if time.mktime(time.gmtime()) - time_1 > 8 * count_of_words + 10:
+                break
+            if word_for_facts != '':
+                facts += get_facts(word_for_facts)
+            else:
+                facts = facts
+            if time.mktime(time.gmtime()) - time_1 > delta and len(facts) > 1:
+                fact = facts[randint(0, len(facts)-1)]
+                if len(fact) > 10:
+                    print_fact(fact)
+                #sys.stdout.write('\r' + facts[randint(0, len(facts)-1)])
+                delta += 30
+            try:
+                raw_category_item = ' '.join(get_raw_category(title))
+                raw_category_item = raw_category_item.lower()
+            except:
+                continue
+
+            word = get_title(title)
+            word = format_word(word, raw_category_item, user_words, target_words)
+
+                
+            if word == '---':
+                continue
+            if (any([i in raw_category_item for i in target_words]) or\
+                any([i in raw_category_item for i in get_category_item(word_request)])) and\
+                word.lower() not in control_page_words_list:
+
+                control_page_words_list.append(word.lower())
+                page_words_list.append(word)
+                [common_categories.append(i) for i in get_raw_category(title)]
+                [common_words.append(i) for i in raw_category_item.split(' ')]
+                dict_items.update({word.lower():title.lower()})
+                word_for_facts = title
+                if len(page_words_list) >= count_of_words:
+                    break
+                else:
+                    continue
+            
+            if (all([i in get_content_text(title) for i in target_words]) or\
+               any([i in raw_category_item for i in get_category_item(word_request)])) and\
+                word.lower() not in control_page_words_list:
+                
+                control_page_words_list.append(word.lower())
+                page_words_list.append(word)
+                [common_categories.append(i) for i in get_raw_category(title)]
+                [common_words.append(i) for i in raw_category_item.split(' ')]
+                dict_items.update({word.lower():title.lower()})
+                word_for_facts = title
+                if len(page_words_list) >= count_of_words:
+                    break
+            
+
+    else:
+        target_word = [
+        item.lower()[:-2] if len(item) > 5 else item.lower()[:-1] if len(item) >= 4 else item.lower() for item in [user_word_request,]
+                        ]
+        target_word = target_word[0]
+        user_word = target_word
+        
+        for title in words_page:
+            if time.mktime(time.gmtime()) - time_1 > 8 * count_of_words + 10:
+                break
+            if word_for_facts != '':
+                facts += get_facts(word_for_facts)
+            else:
+                facts = facts
+            if time.mktime(time.gmtime()) - time_1 > delta and len(facts) > 1:
+                fact = facts[randint(0, len(facts)-1)]
+                if len(fact) > 10:
+                    print_fact(fact)
+                #sys.stdout.write('\r' + facts[randint(0, len(facts)-1)])
+                delta += 30
+            try:
+                raw_category_item = ' '.join(get_raw_category(title))
+                raw_category_item = raw_category_item.lower()
+            except:
+                continue
+            word = get_title(title)
+            word = format_word(word, raw_category_item, user_word, target_word)
+
+            if word == '---':
+                continue
+
+            if (target_word in raw_category_item or\
+                target_word in get_content_text(title)) and\
+                word.lower() not in control_page_words_list:
+                control_page_words_list.append(word.lower())
+                page_words_list.append(word)
+                [common_categories.append(i) for i in get_raw_category(title)]
+                [common_words.append(i) for i in raw_category_item.split(' ')]
+                dict_items.update({word.lower():title.lower()})
+                word_for_facts = title
+
+            if len(page_words_list) == count_of_words:
+                break
+    
+    return page_words_list, dict_items, #sort_count_category(common_categories, 3), sort_count_category(common_words, 15)
+
+def get_raw_category(word_request):
+    #URL = 'https://ru.wikipedia.org/w/api.php?action=parse&prop=categories&format=json&page=' + url_decoder(word_request)
+    #try:
+    #    page = requests.get(URL).json()['parse']['categories']
+    #except:
+    URL = 'https://ru.wikipedia.org/w/api.php?action=opensearch&search='+url_decoder(word_request)+'&format=json'
+    new_url = requests.get(URL).json()[3][0]
+    page = requests.get(new_url).content
+    html_tree = html.fromstring(page.decode('UTF-8'))
+    items = html_tree.xpath(".//div[contains(@class,'mw-normal-catlinks')]/ul/li/a")
+    page = [i.text for i in items]
+    category_list = []
+    for i in page:
+        if 'Вики' not in i and 'Страницы' not in i:
+            category_list.append(i)
+    category_list = [i.lower() for i in category_list]
+    category_list = [i.replace('_', ' ') for i in category_list]
+    return category_list
+
+def format_word(title, raw_category_item, user_words, target_words):
+
+    try:
+        words = title.split(' ')
+    except:
+        return '---'
+
+    if '(значения)' in words:
+        words.remove('(значения)')
+    
+    # Возвращение аббривеатур
+    for word in words:
+        if all([letter.isupper() == True for letter in word]) == True:
+            return word
+
+    # Пропуск запросов с предлогами
+    if any([morph.parse(item)[0].tag.POS == 'PREP' for item in words]) == True:
+        return '---'
+
+    # Пропуск праздников
+    if 'праздник' in raw_category_item:
+        return '---'
+
+    if len(words) == 1 and '-' in words[0]:
+        return words[0].split('-')[0]
+        
+    # Проверка имён
+    if 'родившиеся' in raw_category_item:
+        if ',' in title:
+            return words[0][:-1]
+        if ')' in title:
+            return words[0]
+        else:
+            return words[-1]
+
+    if len(words) == 2:
+
+        if morph.parse(words[0])[0].tag.POS == 'ADJF' and any([i in words[0].lower() for i in user_words + target_words]) == True:
+            return words[1]
+
+        if morph.parse(words[1])[0].tag.POS == 'ADJF' and any([i in words[1].lower() for i in user_words + target_words]) == True:
+            return words[0]
+
+        if morph.parse(words[0])[0].tag.number == 'sing' and morph.parse(words[0])[0].tag.POS == 'ADJF':
+            return words[0]
+
+        if morph.parse(words[1])[0].tag.number == 'sing' and morph.parse(words[1])[0].tag.POS == 'ADJF':
+            return words[0]
+
+    if len(words) == 3:
+        for item in words:
+            p = morph.parse(item)[0]
+            if p.tag.POS == 'NOUN':
+                return item
+    else:
+        word = words[0]
+        return word
+    
+    
+def filter_items(items):
+    filter_list = []
+    page_words = [i.get('title') if isinstance(i.text, str) == True and isinstance(i.get('title'), str) == True else 0 for i in items]
+    #page_words = items
+    for raw_word in page_words:
+        if raw_word == 0:
+            continue
+        if any([i.isdigit() == True for i in raw_word]):
+            continue
+        if any([len(item) == 1 for item in raw_word.split(' ')]) == True:
+            continue
+        if len(raw_word) < 2 or len(raw_word.split(' ')) > 3:
+            continue
+        if any([morph.parse(item)[0].tag.POS == 'PREP' for item in raw_word.split(' ')]) == True:
+            continue
+        if any(i in raw_word.lower() for i in ['редактировать', 'отсутствует', 'википедия', 'портал', ':', '-', '.', 'значения']) == True:
+            continue
+        filter_list.append(raw_word)
+    filter_list = list(set(filter_list))
+    filter_list = [i.split(' ') for i in filter_list]
+    filter_list.sort(key=len)
+    filter_list = [' '.join(i) for i in filter_list]
+    #filter_list.sort(key=len)
+    return filter_list
+
+def sort_count_category(common_categories, n):
+    for category in common_categories:
+        if any([i in category for i in ['статьи',]])==True:
+            common_categories.remove(category)
+    
+        
+    count_categories = [common_categories.count(i) for i in common_categories]
+    count_categories.sort(reverse=True)
+    count_category_list = []
+    for count in count_categories:
+        for category in common_categories:
+            if common_categories.count(category) == count and category not in count_category_list and len(count_category_list) < n:
+                count_category_list.append(category)
+    return list(set(count_category_list))
+
+
+def get_content_text(word):
+    URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(word)
+    page = requests.get(URL).content
+    html_tree = html.fromstring(page.decode('UTF-8'))
+    items = html_tree.findall(".//a")
+    content_list = [i.text if isinstance(i.text, str) == True else ' ' for i in items]
+    content_text = ' '.join(content_list)[:200]
+
+    text_items = html_tree.xpath(".//p")
+    try:
+        URL = 'https://ru.wikipedia.org/w/api.php?action=parse&prop=categories&format=json&page=' + url_decoder(word)
+        page = requests.get(URL).json()['parse']['categories']
+        category_items = [i['*'] for i in page]
+    except:
+        category_items = []
+    items = text_items + category_items
+    new_item = str()
+    for item in items:
+        try:
+            new_item += item.text
+        except:
+            continue
+    return content_text + new_item[:400]
+
 
 # Функция фильтрации найденных слов
 def append_list(list_words):
@@ -251,37 +591,3 @@ def distance(a, b):
             current_row[j] = min(add, delete, change)
     return current_row[n]
 
-
-def get_content_text(word):
-
-    URL = 'https://ru.wikipedia.org/wiki/' + url_decoder(word)
-    page = requests.get(URL).content
-    html_tree = html.fromstring(page.decode('UTF-8'))
-    text_items = html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/*")
-    try:
-        URL = 'https://ru.wikipedia.org/w/api.php?action=parse&prop=categories&format=json&page=' + url_decoder(word)
-        page = requests.get(URL).json()['parse']['categories']
-        category_items = [i['*'] for i in page]
-    except:
-        category_items = []
-    items = text_items + category_items
-    new_item = str()
-    for item in items:
-        try:
-            new_item += item.text
-        except:
-            continue
-    return new_item
-
-def parse_items(word_request):
-    URL = 'https://ru.wikipedia.org/w/api.php?action=parse&prop=links&format=json&page=' + url_decoder(word_request)
-    page = requests.get(URL).json()['parse']['links']
-    words_page = [i['*'] for i in page]
-
-    page_words_list = []
-
-    for i, word in enumerate(words_page):
-
-        if len(append_list([word,])) > 0 and word_request.lower()[:-2] in get_content_text(word) and 'государство' not in get_content_text(word):
-            page_words_list.append(word)
-    return page_words_list
