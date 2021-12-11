@@ -8,9 +8,8 @@ from wiki_crossword.functions.crossword_plotter import print_words
 def get_crossword(request_word, count_of_words=5, print_answers=False, difficult='Очень сложно'):
   difficult_dict = {
     'Легко':1,
-    'Средне':0.6,
-    'Сложно':0.3,
-    'Очень сложно':0.0,
+    'Средне':2,
+    'Сложно':3,
   }
   if print_answers == False:
       difficult = difficult_dict[difficult]
