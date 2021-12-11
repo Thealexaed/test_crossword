@@ -4,6 +4,7 @@ import numpy as np
 from random import randint
 import sys
 from wiki_crossword.functions.get_definitions import *
+import math
 matplotlib.rcParams.update(
     {
         'text.usetex': False,
@@ -38,6 +39,16 @@ def random_order(list_words, n_words=None):
         continue
     [random_items.append(list_words[r]) for r in random_list]
     return random_items
+
+# Функция получения рандомного списка пропуска букв
+def difficult_printer(word, difficult):
+    if difficult == 3:
+       return [randint(0,0) for i in word]
+    list_print = []
+    sum_c = math.ceil(len(word)//3*(3-difficult))
+    while sum(list_print) != sum_c:
+        list_print = [randint(0,1) for i in word]
+    return list_print
 
 # Функция получения списка координат-исключений
 def exec_list_new(list_coords):
@@ -266,15 +277,13 @@ def plot_word_horiz(word, coordinates, ax, item, visible, difficult):
     h_line = np.linspace(x, x+len(word), 10)
     ax.plot(h_line,np.linspace(y,y,10), color='black')
     ax.plot(h_line,np.linspace(y+1,y+1,10), color='black')
-    v_count = 0
+    if  visible == False:
+        visible_list = difficult_printer(word, int(difficult))
     for i, letter in enumerate(word):
         if visible == True:
-            set_visible = visible
+            set_visible = True
         else:
-            set_visible = randint(0,1)
-            v_count += set_visible
-            if v_count > len(word)*difficult:
-                set_visible = 0
+            set_visible = visible_list[i]
         ax.plot(np.linspace(x+i,x+i,10),w_line, color='black')
         ax.scatter(coordinates[0][0]+i,coordinates[0][1],marker='$'+letter+'$', s=150, visible=set_visible, color='black')
     i+=1
@@ -289,15 +298,13 @@ def plot_word_vert(word, coordinates, ax, item, visible, difficult):
     h_line = np.linspace(x, x+1, 10)
     ax.plot(np.linspace(x,x,10), w_line, color='black')
     ax.plot(np.linspace(x+1,x+1,10), w_line, color='black')
-    v_count = 0
+    if  visible == False:
+        visible_list = difficult_printer(word, int(difficult))
     for i, letter in enumerate(word):
         if visible == True:
-            set_visible = visible
+            set_visible = True
         else:
-            set_visible = randint(0,1)
-            v_count += set_visible
-            if v_count > len(word)*difficult:
-                set_visible = 0
+            set_visible = visible_list[i]
         ax.plot(h_line,np.linspace(y-i,y-i,10), color='black')
         ax.scatter(coordinates[i][0],coordinates[i][1], marker='$'+letter+'$', s=150, visible=set_visible, color='black')
     i+=1
