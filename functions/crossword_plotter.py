@@ -292,7 +292,7 @@ def plot_word_horiz(word, coordinates, ax, item, visible, difficult):
         else:
             set_visible = visible_list[i]
         ax.plot(np.linspace(x+i,x+i,10),w_line, color='black')
-        ax.scatter(coordinates[0][0]+i,coordinates[0][1],marker='$'+letter+'$', s=150, visible=set_visible, color='black')
+        ax.scatter(coordinates[0][0]+i,coordinates[0][1],marker='$'+letter+'$', s=190, visible=set_visible, color='black')
     i+=1
     ax.plot(np.linspace(x+i,x+i,10),w_line, color='black')
 
@@ -313,7 +313,7 @@ def plot_word_vert(word, coordinates, ax, item, visible, difficult):
         else:
             set_visible = visible_list[i]
         ax.plot(h_line,np.linspace(y-i,y-i,10), color='black')
-        ax.scatter(coordinates[i][0],coordinates[i][1], marker='$'+letter+'$', s=150, visible=set_visible, color='black')
+        ax.scatter(coordinates[i][0],coordinates[i][1], marker='$'+letter+'$', s=190, visible=set_visible, color='black')
     i+=1
     ax.plot(h_line,np.linspace(y-i,y-i,10), color='black')
     
@@ -344,7 +344,7 @@ def plot_word_horiz(word, coordinates, ax, item, visible, difficult):
         else:
             set_visible = visible_list[i]
         ax.plot(np.linspace(x+i,x+i,10),w_line, color='black')
-        ax.scatter(coordinates[0][0]+i,coordinates[0][1],marker='$'+letter+'$', s=150, visible=set_visible, color='black')
+        ax.scatter(coordinates[0][0]+i,coordinates[0][1],marker='$'+letter+'$', s=200, visible=set_visible, color='black')
     i+=1
     ax.plot(np.linspace(x+i,x+i,10),w_line, color='black')
 
@@ -369,7 +369,7 @@ def plot_word_vert(word, coordinates, ax, item, visible, difficult):
         else:
             set_visible = visible_list[i]
         ax.plot(h_line,np.linspace(y-i,y-i,10), color='black')
-        ax.scatter(coordinates[i][0],coordinates[i][1], marker='$'+letter+'$', s=150, visible=set_visible, color='black')
+        ax.scatter(coordinates[i][0],coordinates[i][1], marker='$'+letter+'$', s=200, visible=set_visible, color='black')
     i+=1
     ax.plot(h_line,np.linspace(y-i,y-i,10), color='black')
 
@@ -619,12 +619,6 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                 else:
                     theme = 'Кроссворд на тему\n"'+request_word+'"'
 
-                #image = get_images_data(request_word)
-                #image = cv2.imread('/content/image_name.jpg')[...,::-1]
-                #fig.figimage(image_2, alpha=0.3, resize=False, zorder=0)
-                #ax_1 = fig.add_axes([0,0,1,1], anchor='NW', frameon=False)
-                #ax_1.axis('off')
-
                 ax[1,0].text((x_max - abs(x_min))/2+3,
                              y_max+2,
                              theme,
@@ -672,7 +666,7 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                 fig = plt.gcf()
                 size = fig.get_size_inches()*fig.dpi
                 print(size, image.shape)
-                fx = (min(size)+1000)/image.shape[1]
+                fx = (min(size)+1500)/image.shape[1]
                 image_2 = cv2.resize(image, (0,0), fx=fx, fy=fx) 
                 print(image_2.shape)
                 fy = max(size)/image_2.shape[0]
