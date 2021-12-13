@@ -5,6 +5,13 @@ from random import randint
 import sys
 from wiki_crossword.functions.get_definitions import *
 import math
+
+import re, json 
+from bs4 import BeautifulSoup
+import urllib
+import cv2
+
+
 matplotlib.rcParams.update(
     {
         'text.usetex': False,
@@ -316,9 +323,58 @@ def list_coord_append(base_list, new_list):
         base_list.append(str(item[0])+','+str(item[1]))
     return base_list
 
+# Функция построения слов по горизонтали
+def plot_word_horiz(word, coordinates, ax, item, visible, difficult):
+    x = coordinates[0][0]-0.5
+    y = coordinates[0][1]-0.5
+    w_line = np.linspace(y, y+1, 10)
+    h_line = np.linspace(x, x+len(word), 10)
+
+    h_line_white = np.linspace(x+.5, x+len(word)-.5, 10)
+    ax.plot(h_line_white, np.linspace(y+.5, y+.5, 10), color='white', linewidth=46, zorder=0, alpha=1)
+
+    ax.plot(x+0.2,y+0.8,marker='$'+str(item+1)+'$', markersize=10, c='black')
+    ax.plot(h_line,np.linspace(y,y,10), color='black')
+    ax.plot(h_line,np.linspace(y+1,y+1,10), color='black')
+    if  visible == False:
+        visible_list = difficult_printer(word, int(difficult))
+    for i, letter in enumerate(word):
+        if visible == True:
+            set_visible = True
+        else:
+            set_visible = visible_list[i]
+        ax.plot(np.linspace(x+i,x+i,10),w_line, color='black')
+        ax.scatter(coordinates[0][0]+i,coordinates[0][1],marker='$'+letter+'$', s=150, visible=set_visible, color='black')
+    i+=1
+    ax.plot(np.linspace(x+i,x+i,10),w_line, color='black')
+
+# Функция построения слов по вертикали
+def plot_word_vert(word, coordinates, ax, item, visible, difficult):
+    x = coordinates[0][0] - 0.5
+    y = coordinates[0][1] + 0.5
+    w_line = np.linspace(y, y-len(word), 10)
+    h_line = np.linspace(x, x+1, 10)
+
+    w_line_white = np.linspace(y-0.5, y-len(word)+0.5, 10)
+    ax.plot(np.linspace(x+.5,x+.5,10), w_line_white, color='white', linewidth=46, zorder=0, alpha=1)
+    
+    ax.plot(x+0.2,y-0.2,marker='$'+str(item+1)+'$', markersize=10, c='black')
+    ax.plot(np.linspace(x,x,10), w_line, color='black')
+    ax.plot(np.linspace(x+1,x+1,10), w_line, color='black')
+    if  visible == False:
+        visible_list = difficult_printer(word, int(difficult))
+    for i, letter in enumerate(word):
+        if visible == True:
+            set_visible = True
+        else:
+            set_visible = visible_list[i]
+        ax.plot(h_line,np.linspace(y-i,y-i,10), color='black')
+        ax.scatter(coordinates[i][0],coordinates[i][1], marker='$'+letter+'$', s=150, visible=set_visible, color='black')
+    i+=1
+    ax.plot(h_line,np.linspace(y-i,y-i,10), color='black')
+
 # Функция печати кроссворда
 def print_words(words, n_words=None, definitions=dict(), random_sort=True, answers=True, plot=True, request_word=str(), difficult=int()):
-    
     if n_words == None:
         n_words = len(words)
     if n_words > len(words):
@@ -557,20 +613,26 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
             continue
         else:
             if plot == True:
+
                 if request_word == 'Своя тема':
                     theme = 'Кроссворд на свою тему'
                 else:
                     theme = 'Кроссворд на тему\n"'+request_word+'"'
-                ax[1,0].text((x_max - abs(x_min))/2+3, y_max+2, theme, ha='center', rotation=0, wrap=True, fontsize=25)
-                ax[0,1].text(0,
-                           0,
-                           'Вопросы:',
-                           ha='left',
-                           rotation=0,
-                           wrap=True,
-                           fontsize=28,
-                           fontstyle='italic',
-                           verticalalignment='top')
+
+                #image = get_images_data(request_word)
+                #image = cv2.imread('/content/image_name.jpg')[...,::-1]
+                #fig.figimage(image_2, alpha=0.3, resize=False, zorder=0)
+                #ax_1 = fig.add_axes([0,0,1,1], anchor='NW', frameon=False)
+                #ax_1.axis('off')
+
+                ax[1,0].text((x_max - abs(x_min))/2+3,
+                             y_max+2,
+                             theme,
+                             ha='center',
+                             rotation=0,
+                             wrap=True,
+                             fontsize=25,
+                             bbox=dict(boxstyle="round", fc=(1., 1, 1), zorder=0))
                 ax[0,1].text(0,
                            0,
                            new_def,
@@ -579,7 +641,8 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                            wrap=True,
                            fontsize=22,
                            fontstyle='italic',
-                           verticalalignment='top')
+                           verticalalignment='top',
+                           bbox=dict(boxstyle="round", fc=(1., 1, 1), alpha=0.8, zorder=1))
                 ax[0,1].text((1/width)*15000,
                            0,
                            answers,
@@ -589,11 +652,93 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                            fontsize=22,
                            fontstyle='italic',
                            verticalalignment='bottom')
+                ax[0,1].text(0,
+                           0,
+                           'Вопросы:',
+                           ha='left',
+                           rotation=0,
+                           wrap=True,
+                           fontsize=28,
+                           fontstyle='italic',
+                           verticalalignment='top', zorder=100)
                 fig.set_figwidth(width)
                 fig.set_figheight(height)
                 text = '\r'+'Поздравляем! Кроссворд составлен!'
                 sys.stdout.write(text)
+                
+                ax[1,0].set_zorder(1)
+                ax[0,1].set_zorder(1)
+                image = get_images_data(request_word)
+                fig = plt.gcf()
+                size = fig.get_size_inches()*fig.dpi
+                print(size, image.shape)
+                fx = (min(size)+750)/image.shape[1]
+                image_2 = cv2.resize(image, (0,0), fx=fx, fy=fx) 
+                print(image_2.shape)
+                fy = max(size)/image_2.shape[0]
+                image_2 = cv2.resize(image_2, (0,0), fx=fy, fy=fy) 
+                print(image_2.shape)
+                im = fig.figimage(image_2,yo=(max(size) - image_2.shape[0])//2, alpha=1, resize=False, zorder=0)
+                im.set_zorder(0)
+
+
                 plt.show()
             else:
                 plt.close()
             break
+
+
+def get_images_data(word_request):
+    images_list = []
+    words = list()
+    headers = {
+    "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.19582"
+    }
+
+    params = {
+    "q": word_request,
+    "tbm": "isch",
+    "ijn": "0",
+    }
+
+    html = requests.get("https://www.google.com/search", params=params, headers=headers)
+    soup = BeautifulSoup(html.text, 'lxml')
+
+    all_script_tags = soup.select('script')
+
+    matched_images_data = ''.join(re.findall(r"AF_initDataCallback\(([^<]+)\);", str(all_script_tags)))
+
+    matched_images_data_fix = json.dumps(matched_images_data)
+    matched_images_data_json = json.loads(matched_images_data_fix)
+
+    matched_google_image_data = re.findall(r'\[\"GRID_STATE0\",null,\[\[1,\[0,\".*?\",(.*),\"All\",', matched_images_data_json)
+
+    matched_google_images_thumbnails = ', '.join(
+        re.findall(r'\[\"(https\:\/\/encrypted-tbn0\.gstatic\.com\/images\?.*?)\",\d+,\d+\]',
+                   str(matched_google_image_data))).split(', ')
+
+    removed_matched_google_images_thumbnails = re.sub(
+        r'\[\"(https\:\/\/encrypted-tbn0\.gstatic\.com\/images\?.*?)\",\d+,\d+\]', '', str(matched_google_image_data))
+    matched_google_full_resolution_images = re.findall(r"(?:'|,),\[\"(https:|http.*?)\",\d+,\d+\]",
+                                                       removed_matched_google_images_thumbnails)
+
+
+    for index, fixed_full_res_image in enumerate(matched_google_full_resolution_images):
+        original_size_img_not_fixed = bytes(fixed_full_res_image, 'ascii').decode('unicode-escape')
+        original_size_img = bytes(original_size_img_not_fixed, 'ascii').decode('unicode-escape')
+        images_list.append(original_size_img)
+    for url in images_list:
+        try:
+            img_data = requests.get(url).content
+            with open('image_name.jpg', 'wb') as handler:
+                handler.write(img_data)
+            image = cv2.imread('/content/image_name.jpg')[...,::-1]
+            if image.shape[0] < 500:
+                continue
+            elif image.shape[1]/image.shape[0] < 1.2:
+                continue
+        except:
+            continue
+        break
+    return image
