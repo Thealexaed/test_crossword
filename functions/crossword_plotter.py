@@ -662,17 +662,21 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                 
                 ax[1,0].set_zorder(1)
                 ax[0,1].set_zorder(1)
+                
                 image = get_images_data(request_word)
-                fig = plt.gcf()
-                size = fig.get_size_inches()*fig.dpi
-                print(size, image.shape)
-                fx = (min(size)+1500)/image.shape[1]
-                image_2 = cv2.resize(image, (0,0), fx=fx, fy=fx) 
-                print(image_2.shape)
-                fy = max(size)/image_2.shape[0]
-                image_2 = cv2.resize(image_2, (0,0), fx=fy, fy=fy) 
-                print(image_2.shape)
-                im = fig.figimage(image_2,yo=(max(size) - image_2.shape[0])//2, alpha=1, resize=False, zorder=0)
+
+                fx = int(fig.get_figwidth() * fig.dpi)+750
+                fy = int(fig.get_figheight() * fig.dpi)
+
+                iy = image.shape[0]
+                coef_y = fy/iy
+                image = cv2.resize(image, (0,0), fx=coef_y, fy=coef_y) 
+
+                ix = image.shape[1]
+                
+                coef_x = fx/ix
+                image = cv2.resize(image, (0,0), fx=coef_x, fy=coef_x) 
+                im = fig.figimage(image, alpha=1, resize=False, zorder=0)
                 im.set_zorder(0)
 
 
