@@ -688,6 +688,7 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
 
 def get_images_data(word_request):
     images_list = []
+    true_images_list = []
     words = list()
     headers = {
     "User-Agent":
@@ -726,7 +727,8 @@ def get_images_data(word_request):
         original_size_img_not_fixed = bytes(fixed_full_res_image, 'ascii').decode('unicode-escape')
         original_size_img = bytes(original_size_img_not_fixed, 'ascii').decode('unicode-escape')
         images_list.append(original_size_img)
-    for url in images_list:
+        
+    for i, url in enumerate(images_list):
         try:
             img_data = requests.get(url).content
             with open('image_name.jpg', 'wb') as handler:
@@ -736,7 +738,9 @@ def get_images_data(word_request):
                 continue
             elif image.shape[1]/image.shape[0] < 1.2:
                 continue
+            true_images_list.append(image)
         except:
             continue
-        break
-    return image
+        if i > 10:
+            break
+    return true_images_list[randint(0, len(true_images_list)-1)]
