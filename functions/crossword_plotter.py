@@ -672,7 +672,7 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                 fig = plt.gcf()
                 size = fig.get_size_inches()*fig.dpi
                 print(size, image.shape)
-                fx = (min(size)+750)/image.shape[1]
+                fx = (min(size)+1000)/image.shape[1]
                 image_2 = cv2.resize(image, (0,0), fx=fx, fy=fx) 
                 print(image_2.shape)
                 fy = max(size)/image_2.shape[0]
