@@ -5,7 +5,7 @@ from random import randint
 import sys
 from wiki_crossword.functions.get_definitions import *
 import math
-
+import time
 import re, json 
 from bs4 import BeautifulSoup
 import urllib
@@ -737,7 +737,10 @@ def get_images_data(word_request):
         original_size_img = bytes(original_size_img_not_fixed, 'ascii').decode('unicode-escape')
         images_list.append(original_size_img)
         
+    time_1 = time.mktime(time.gmtime())
     for i, url in enumerate(images_list):
+        if time.mktime(time.gmtime()) - time_1 > 40 and (true_images_list) > 1:
+            break
         try:
             img_data = requests.get(url).content
             with open('image_name.jpg', 'wb') as handler:
