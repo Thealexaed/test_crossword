@@ -737,6 +737,7 @@ def get_images_data(word_request):
         original_size_img = bytes(original_size_img_not_fixed, 'ascii').decode('unicode-escape')
         images_list.append(original_size_img)
         
+    images_list = random_order(images_list, len(images_list))    
     time_1 = time.mktime(time.gmtime())
     for i, url in enumerate(images_list):
         if time.mktime(time.gmtime()) - time_1 > 40 and (true_images_list) > 1:
@@ -753,6 +754,6 @@ def get_images_data(word_request):
             true_images_list.append(image)
         except:
             continue
-        if i > 5:
+        if i > 1:
             break
     return true_images_list[randint(0, len(true_images_list)-1)]
