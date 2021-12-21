@@ -374,7 +374,7 @@ def plot_word_vert(word, coordinates, ax, item, visible, difficult):
     ax.plot(h_line,np.linspace(y-i,y-i,10), color='black')
 
 # Функция печати кроссворда
-def print_words(words, n_words=None, definitions=dict(), random_sort=True, answers=True, plot=True, request_word=str(), difficult=int()):
+def print_words(words, n_words=None, definitions=dict(), random_sort=True, answers=True, plot=True, request_word=str(), difficult=int(), n_var=1):
     if n_words == None:
         n_words = len(words)
     if n_words > len(words):
@@ -663,7 +663,10 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                            verticalalignment='top', zorder=100)
                 fig.set_figwidth(width)
                 fig.set_figheight(height)
-                text = '\r'+'Поздравляем! Кроссворд составлен!'
+                if n_var > 1:
+                    text = '\r'+'Вариант ' + str(n_var)
+                else:
+                    text = '\r'+'Поздравляем! Кроссворд составлен!'
                 sys.stdout.write(text)
                 
                 ax[1,0].set_zorder(1)
