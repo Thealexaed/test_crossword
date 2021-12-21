@@ -21,7 +21,11 @@ def definition_search(words, dict_titles):
             continue
         else:
             URL = 'https://ru.wikipedia.org/w/api.php?action=opensearch&search='+url_decoder(word.lower())+'&format=json'
-            URL = requests.get(URL).json()[3][0]
+            try:
+                URL = requests.get(URL).json()[3][0]
+            except:
+                words.remove(word)
+                continue
         page = requests.get(URL).content
         html_tree = html.fromstring(page.decode('UTF-8'))
 
