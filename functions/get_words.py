@@ -147,14 +147,24 @@ def request_to_search(request_word, count_of_words, coef, user_request):
     if len(set(set(request_word.split(' ')) & set(user_request.split(' ')))) == 0 and\
        len(set(user_request)) / len(set(user_request) & set(request_word)) < 0.7:
         sys.stdout.write('\rКажется, запрос немного непростой. Дайте минуточку...')
-        words_page, dict_titles = parse_items(request_word, count_of_words, user_request)
+        words_page_one, dict_titles_one = new_page_searcher(request_word)
+        if len(words_page_one) < count_of_words:
+            words_page, dict_titles = parse_items(request_word, count_of_words, user_request)
+        words_page += words_page_one
+        words_page = list(set(words_page))
+        dict_titles.update(dict_titles_one)
         if len(words_page) < 2:
             try:
                 new_request_word = get_unknown_category(user_request)
             except:
                 new_request_word = search_unknown_category(user_request)
             sys.stdout.write('\rПопробую поискать на странице ' + new_request_word)
-            words_page, dict_titles = parse_items(new_request_word, count_of_words, user_request)
+            words_page_one, dict_titles_one = new_page_searcher(request_word)
+            if len(words_page_one) < count_of_words:
+                words_page, dict_titles = parse_items(new_request_word, count_of_words, user_request)
+            words_page += words_page_one
+            words_page = list(set(words_page))
+            dict_titles.update(dict_titles_one)
         search_page = True
 
     if len(words_page) >= count_of_words:
@@ -191,7 +201,13 @@ def request_to_search(request_word, count_of_words, coef, user_request):
         count_of_words_for_search = count_of_words - len(words)
         # Cлова основной страницы
         sys.stdout.write('\r Ищу слова на странице википедии...')
-        words_page_two, dict_titles = parse_items(request_word, count_of_words_for_search, user_request)
+        words_page_one, dict_titles_one = new_page_searcher(request_word)
+        if len(words_page_one) < count_of_words_for_search:
+            words_page_two, dict_titles = parse_items(request_word, count_of_words_for_search, user_request)
+        words_page_two += words_page_one
+        words_page_two = list(set(words_page_two))
+        dict_titles.update(dict_titles_one)
+       
     
     words = [i.lower() for i in words]
     words = list(set(words + words_page + words_page_two))
@@ -388,64 +404,6 @@ def get_raw_category(word_request):
     category_list = [i.lower() for i in category_list]
     category_list = [i.replace('_', ' ') for i in category_list]
     return category_list
-
-def format_word(title, raw_category_item, user_words, target_words):
-
-    try:
-        words = title.split(' ')
-    except:
-        return '---'
-
-    if '(значения)' in words:
-        words.remove('(значения)')
-    
-    # Возвращение аббривеатур
-    for word in words:
-        if all([letter.isupper() == True for letter in word]) == True:
-            return word
-
-    # Пропуск запросов с предлогами
-    if any([morph.parse(item)[0].tag.POS == 'PREP' for item in words]) == True:
-        return '---'
-
-    # Пропуск праздников
-    if 'праздник' in raw_category_item:
-        return '---'
-
-    if len(words) == 1 and '-' in words[0]:
-        return words[0].split('-')[0]
-        
-    # Проверка имён
-    if 'родившиеся' in raw_category_item:
-        if ',' in title:
-            return words[0][:-1]
-        if ')' in title:
-            return words[0]
-        else:
-            return words[-1]
-
-    if len(words) == 2:
-
-        if morph.parse(words[0])[0].tag.POS == 'ADJF' and any([i in words[0].lower() for i in user_words + target_words]) == True:
-            return words[1]
-
-        if morph.parse(words[1])[0].tag.POS == 'ADJF' and any([i in words[1].lower() for i in user_words + target_words]) == True:
-            return words[0]
-
-        if morph.parse(words[0])[0].tag.number == 'sing' and morph.parse(words[0])[0].tag.POS == 'ADJF':
-            return words[0]
-
-        if morph.parse(words[1])[0].tag.number == 'sing' and morph.parse(words[1])[0].tag.POS == 'ADJF':
-            return words[0]
-
-    if len(words) == 3:
-        for item in words:
-            p = morph.parse(item)[0]
-            if p.tag.POS == 'NOUN':
-                return item
-    else:
-        word = words[0]
-        return word
     
     
 def filter_items(items):
@@ -632,3 +590,235 @@ def distance(a, b):
             current_row[j] = min(add, delete, change)
     return current_row[n]
 
+
+
+
+def find_word_common_category(words, word_request):
+    words.append(word_request)
+    cat_list = []
+    word_list = []
+    dict_w_c = dict()
+    percent = 1/(len(words)**(0.8-(1/len(words))))*2
+    for word in words:
+        try:
+            word = get_title(word)
+            if '-' in word:
+                continue
+            categories = get_category_item(word)
+            if categories != []:
+                dict_w_c.update({word:categories})
+            for category in categories:
+              cat_list.append(category)
+        except:
+          continue
+
+    common_categories = sort_count_category(cat_list, int(len(cat_list)*percent))
+    for word in dict_w_c.keys():
+        if any([category in common_categories for category in dict_w_c[word]]) or word.lower() in common_categories:
+            word_list.append(word)
+    return word_list
+
+def get_title(word_request, defin=False):
+    abc = string.ascii_letters
+    URL = 'https://ru.wikipedia.org/w/api.php?action=opensearch&search='+url_decoder(word_request)+'&format=json'
+    new_url = requests.get(URL).json()[3][0]
+    page = requests.get(new_url).content
+    html_tree = html.fromstring(page.decode('UTF-8'))
+    items = html_tree.xpath(".//h1[contains(@class,'firstHeading')]")[0]
+    word = items.text
+    if defin == True:
+        return word
+    try:
+        if len(word.split(' ')) > len(word_request.split(' ')):
+            word = word_request
+    except:
+        return None
+
+    if any([i in abc for i in word]) == True:
+        word = word_request
+    if any([i in abc for i in word]) == True:
+        return None
+    return word
+
+def get_title_new(word, word_request):
+    abc = string.ascii_letters
+    URL = 'https://ru.wikipedia.org/w/api.php?action=opensearch&search='+url_decoder(word)+url_decoder(word_request)+'&format=json'
+    new_url = requests.get(URL).json()[3][0]
+    page = requests.get(new_url).content
+    html_tree = html.fromstring(page.decode('UTF-8'))
+    items = html_tree.xpath(".//h1[contains(@class,'firstHeading')]")[0]
+    word = items.text
+    if any([i in abc for i in word]) == True:
+        word = word_request
+    return word
+
+def get_def_gramota(request_word):
+    URL = 'http://www.gramota.ru/slovari/dic/?word='+url_decoder(request_word) + '&all=x'
+    page = requests.get(URL).content
+    html_tree = html.fromstring(bytes(page))
+    page_text = html_tree.text_content().replace('\t', '')
+    page_text = page_text.split('return true')[1].split('О портале')[0].replace('\n', ',').replace('\t', '').replace('\xa0', '').replace(',,', ',')
+    reg = r'[А-Я]{2,30}'
+    reg_1 = r'[А-Я][^А-Я,\W]{2,20}'
+    reg_2 = r' -\w'
+    reg_3 = r'\W[А-Я]\W'
+    reg_4 = r'\d.\s'
+    if 'То' in page_text:
+        page_text = page_text.replace('То', 'Нечто')
+    try:
+        start_word = re.findall(reg,page_text)[0]
+    except:
+        try:
+            return list(definition_search([request_word,], dict()).values())[0]
+        except:
+            return get_title(request_word, defin = True)
+    page_text = page_text[page_text.index(start_word):]
+    a = re.findall(reg_1,page_text)
+    next_word = ''
+    definitions = []
+    for i, word in enumerate(a):
+        new_txt = page_text.split(word)
+        page_text = new_txt[-1]
+        definition = next_word + new_txt[0]
+        next_word = word
+        definition = re.sub(reg_4, '', definition)
+        if len(re.findall(reg_2,definition)) > 0 or len(re.findall(reg_3,definition)) > 0 or "отсутствует" in definition:
+            continue
+        elif [
+        request_word.lower()[:-2] if len(request_word) > 5 else request_word.lower()[:-1] if len(request_word) >= 4 else request_word.lower() for item in [request_word,] 
+                        ][0] in definition.lower():
+            continue
+        elif len(definition.split(' ')) < 3:
+            continue
+        else:
+            index_end = definition.rindex('.')
+            definition = definition[:index_end+1]
+            definitions.append(definition)
+    try:
+        if len(definitions[0]) < 20 or len(definitions[0].split(' ')) < 3:
+            return list(definition_search([request_word,], dict()).values())[0]
+    except:
+        return list(definition_search([request_word,], dict()).values())[0]
+    return definitions[0]
+
+
+def get_page_text(request_word):
+    request_word = get_title(request_word)
+    URL = 'https://ru.wikipedia.org/wiki/'+url_decoder(request_word)
+    page = requests.get(URL).content
+    html_tree = html.fromstring(page.decode('UTF-8'))
+    page_text = html_tree.text_content()
+    page_text = page_text.split('свободной энциклопедии')[1].split('↑')[0].replace('\n', ',').replace('\t', '').replace('\xa0', '').replace(',,', ',')
+    reg = r'[[0-9]+]'
+    page_text = ''.join(re.split(reg, page_text))
+    return page_text
+
+def get_words_page(request_word):
+    page_text = get_page_text(request_word)
+    list_items = []
+    list_items_new = []
+    [list_items.append(item) if item.count(',') > 2 else None for item in page_text.split('.')]
+    list_items
+    for i in list_items:
+        if ':' in i:
+            i = i.split(':')[1]
+        [list_items_new.append(word) for word in i.split(',')]
+    return filter_words(list_items_new, request_word)
+
+def filter_words(list_raw_words, request_word):
+    if 'Geox' in morph.parse(request_word)[0].tag:
+        geox_ind = True
+    else:
+        geox_ind = False
+    reg = r'[A-я].+'
+    dig = r'[0-9]'
+    lat = r'[A-z]'
+    list_items = []
+    for i in list_raw_words:
+        i = i.strip()
+        if '-' in i:
+            continue
+        if any(exc in i.lower() for exc in ['назван',
+                                            'примеч',
+                                            'викип',
+                                            'стать',
+                                            'статист',
+                                            'версия',
+                                            'описание',
+                                            'ссылк',
+                                            'содержан',
+                                            'литератур',
+                                            'значен',
+                                            'версия',
+                                            'описание',
+                                            ' лет']) == True:
+            continue
+        if len(re.findall(dig, i)) > 0:
+            continue
+        if len(re.findall(lat, i)) > 0:
+            continue
+        if len(re.findall(lat, i)) > 0:
+            continue
+        if len(i) == 0:
+            continue
+        if '(' in i:
+            i = i.split('(')[0]
+        if '«' in i:
+            i = i.replace('«', '')
+        i_split = i.split(' ')
+        if len(i_split) > 2:
+            continue
+        if len(i_split) == 1 and morph.parse(i_split[0])[0].tag.POS in ['ADJF', 'PRTF']:
+            continue
+        if min([len(word) for word in i_split]) < 3:
+            continue
+        if max([len(word) for word in i_split]) > 10:
+            continue
+        #if any([morph.parse(word)[0].tag.POS in ['CONJ', 'PREP', 'VERB', 'COMP', 'ADVB','PRTF', 'GRND', 'NPRO', 'PRCL', None, 'PRED', 'NPRO'] for word in i_split]) == True:
+            #continue
+        if 'Name' in morph.parse(i)[0].tag and 'Geox' not in morph.parse(i)[0].tag:
+            continue
+        if any(['Subx' in morph.parse(word)[0].tag for word in i_split]) == True:
+            continue
+        if len(i_split) == 1:
+            i = morph.parse(i)[0].normal_form.capitalize()
+        if geox_ind == False:
+            if 'Geox' in morph.parse(i)[0].tag:
+                continue
+        #if any([any([teg in morph.parse(word)[0].tag for teg in ['CONJ', 'PREP', 'VERB', 'COMP', 'ADVB','PRTF', 'GRND', 'NPRO', 'PRCL', 'UNKN', 'PRED', 'NPRO', 'INFN']]) for word in i_split]) == True:
+        #    continue
+        if all([morph.parse(word)[0].tag.POS in ['NOUN', 'ADJF'] for word in i_split]) == False:
+            continue
+        if '-' in i:
+            continue
+        i = re.findall(reg, i)[0]
+        list_items.append(i)
+    list_items = list(set(list_items))
+    return list_items
+
+def new_page_searcher(word_request):
+    gwp = get_words_page(word_request)
+    gwp = find_word_common_category(gwp,word_request)
+    l_w = []
+    dict_words = dict()
+    for word in gwp:
+        try:
+            definition = get_def_gramota(word)
+            key_words = definition.split(' ')
+            f_w = filter_words(key_words, word)
+            for f in f_w:
+                l_w.append(f)
+
+        except:
+            continue
+    scc = sort_count_category(l_w, 10)
+    gwp = list(set(scc + gwp))
+    gwp = find_word_common_category(gwp, word_request)
+    for word in gwp:
+        try:
+            definition = get_def_gramota(word)
+            dict_words.update({word.lower():definition})
+        except:
+            continue
+    gwp = [word.lower() for word in gwp]
+    return gwp, dict_words
