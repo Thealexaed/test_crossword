@@ -270,7 +270,6 @@ def correct_answers(dict_words):
             new_item = format_word(item, target_words = dict_words[item], raw_category_item = '', user_words = '')
             if item != new_item:
                 dict_words[new_item] = dict_words[item]
-                print(item)
                 dict_words.pop(item)
                 
             curt_item = [
