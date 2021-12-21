@@ -7,11 +7,21 @@ def definition_search(words, dict_titles):
     list_simplicity = []
     dict_def = dict()
     name=str()
+    def_item = False
     for word in words:
-        if word in dict_titles.keys():
-            URL = word_url+url_decoder(dict_titles[word]) 
+        if word in dict_titles.keys() and len(dict_titles[word].split(' ')) <= 3:
+            try:
+                URL = 'https://ru.wikipedia.org/w/api.php?action=opensearch&search='+url_decoder(dict_titles[word])+'&format=json'
+                URL = requests.get(URL).json()[3][0]
+            except:
+                definition = dict_titles[word]
+                continue
+        elif word in dict_titles.keys() and len(dict_titles[word].split(' ')) > 3:
+            definition = dict_titles[word]
+            continue
         else:
-            URL = word_url+url_decoder(word.lower())    
+            URL = 'https://ru.wikipedia.org/w/api.php?action=opensearch&search='+url_decoder(word.lower())+'&format=json'
+            URL = requests.get(URL).json()[3][0]
         page = requests.get(URL).content
         html_tree = html.fromstring(page.decode('UTF-8'))
 
@@ -38,17 +48,25 @@ def definition_search(words, dict_titles):
                 page = requests.get(URL).content
                 html_tree = html.fromstring(page.decode('UTF-8'))
             except:
-                words.remove(word)
-                continue
+                if def_item == False:
+                    words.remove(word)
+                    continue
+                else:
+                    definition = dict_titles[word]
 
         try:
             items_list = html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/p/node()") + [html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/ul/li/node()")[1],]
         except:
             items_list = html_tree.xpath(".//div[contains(@class,'mw-parser-output')]/p/node()")
-        if len(items_list)==0:
+        if len(items_list)==0 and def_item == False:
             words.remove(word)
             continue
-        definition = str()
+        elif len(items_list)==0 and def_item == True:
+            definition = dict_titles[word]
+        if def_item == True:
+            definition = dict_titles[word]
+        else:
+            definition = str()
         for item in items_list:
             if isinstance(item, str)==False:
                 definition += str(item.text)
@@ -177,7 +195,8 @@ def definition_search(words, dict_titles):
 
         list_def.append(definition)
         dict_def[word] = definition
-    return dict_def
+    dict_titles.update(dict_def)
+    return correct_answers(dict_titles)
 
 # Функция сортировки определений
 def sort_definitions(definotions):
@@ -239,3 +258,85 @@ def get_answers(data_dict):
     vertical_answers = cutter_text(vertical_answers[:-2]+'.', 50)
     answers = 'Ответы:\nПо горизонтали\n\t\t\t\t' + horisontal_answers + '\n' + 'По вертикали\n\t\t\t\t' + vertical_answers
     return answers
+
+
+
+def correct_answers(dict_words):
+    for item in dict_words.keys():
+        if len(item.split(' ')) == 1:
+            continue
+        else:
+            new_item = format_word(item, target_words = dict_words[item], raw_category_item = '', user_words = '')
+            if item != new_item:
+                dict_words[new_item] = dict_words[item]
+                dict_words.pop(item)
+            curt_item = [
+            new_item.lower()[:-2] if len(new_item) > 5 else new_item.lower()[:-1] if len(new_item) >= 4 else new_item.lower() for item in [new_item,]
+                        ][0]
+            definitions = dict_words[new_item].split(' ')
+            if curt_item in dict_words[new_item] and len(definitions) > 0:
+                for definition in definitions:
+                    if curt_item not in definition.lower() and len(definition) > 50:
+                        dict_words[new_item] = definition
+                        break
+        return dict_words
+
+
+
+def format_word(title, raw_category_item, user_words, target_words):
+
+    try:
+        words = title.split(' ')
+    except:
+        return '---'
+
+    if '(значения)' in words:
+        words.remove('(значения)')
+    
+    # Возвращение аббривеатур
+    for word in words:
+        if all([letter.isupper() == True for letter in word]) == True:
+            return word
+
+    # Пропуск запросов с предлогами
+    if any([morph.parse(item)[0].tag.POS == 'PREP' for item in words]) == True:
+        return '---'
+
+    # Пропуск праздников
+    if 'праздник' in raw_category_item:
+        return '---'
+
+    if len(words) == 1 and '-' in words[0]:
+        return words[0].split('-')[0]
+        
+    # Проверка имён
+    if 'родившиеся' in raw_category_item:
+        if ',' in title:
+            return words[0][:-1]
+        if ')' in title:
+            return words[0]
+        else:
+            return words[-1]
+
+    if len(words) == 2:
+
+        if morph.parse(words[0])[0].tag.POS == 'ADJF' and any([i in words[0].lower() for i in user_words + target_words]) == True:
+            return words[1]
+
+        if morph.parse(words[1])[0].tag.POS == 'ADJF' and any([i in words[1].lower() for i in user_words + target_words]) == True:
+            return words[0]
+
+        if morph.parse(words[0])[0].tag.number == 'sing' and morph.parse(words[0])[0].tag.POS == 'ADJF':
+            return words[0]
+
+        if morph.parse(words[1])[0].tag.number == 'sing' and morph.parse(words[1])[0].tag.POS == 'ADJF':
+            return words[0]
+
+    if len(words) == 3:
+        for item in words:
+            p = morph.parse(item)[0]
+            if p.tag.POS == 'NOUN':
+                return item
+    else:
+        word = words[0]
+        return word
