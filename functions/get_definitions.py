@@ -262,14 +262,17 @@ def get_answers(data_dict):
 
 
 def correct_answers(dict_words):
-    for item in dict_words.keys():
+    dict_for_iterations = dict_words.copy()
+    for item in dict_for_iterations.keys():
         if len(item.split(' ')) == 1:
             continue
         else:
             new_item = format_word(item, target_words = dict_words[item], raw_category_item = '', user_words = '')
             if item != new_item:
                 dict_words[new_item] = dict_words[item]
+                print(item)
                 dict_words.pop(item)
+                
             curt_item = [
             new_item.lower()[:-2] if len(new_item) > 5 else new_item.lower()[:-1] if len(new_item) >= 4 else new_item.lower() for item in [new_item,]
                         ][0]
@@ -278,8 +281,8 @@ def correct_answers(dict_words):
                 for definition in definitions:
                     if curt_item not in definition.lower() and len(definition) > 50:
                         dict_words[new_item] = definition
-                        break
-        return dict_words
+                        continue
+    return dict_words
 
 
 
