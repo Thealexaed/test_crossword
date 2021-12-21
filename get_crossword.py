@@ -5,7 +5,7 @@ from wiki_crossword.functions.get_words import find_words
 from wiki_crossword.functions.get_definitions import definition_search
 from wiki_crossword.functions.crossword_plotter import print_words
 
-def get_crossword(request_word, count_of_words=5, print_answers=False, difficult='Сложно'):
+def get_crossword(request_word, count_of_words=5, print_answers=False, difficult='Сложно', count_var=1):
   difficult_dict = {
     'Легко':1,
     'Средне':2,
@@ -18,7 +18,7 @@ def get_crossword(request_word, count_of_words=5, print_answers=False, difficult
       print('Введите слово!')
     else:
       try:
-        final_def(request_word, count_of_words, print_answers, difficult)
+        final_def(request_word, count_of_words, print_answers, difficult, count_var)
       except:
         sys.stdout.write('\rСлова не найдены! Уточните запрос!')
   except KeyboardInterrupt:
@@ -26,7 +26,7 @@ def get_crossword(request_word, count_of_words=5, print_answers=False, difficult
     pass
 
 
-def final_def(word, count_of_words, print_answers, difficult):
+def final_def(word, count_of_words, print_answers, difficult, count_var):
     text = '\rИщу слова...'
     sys.stdout.write(text)
     if ',' in word:
@@ -53,9 +53,10 @@ def final_def(word, count_of_words, print_answers, difficult):
     text = '\rИдет построение сканворда...'
     sys.stdout.write(text)
     clear_output()
-    print_words(words,
-                n_words = count_of_words,
-                random_sort=True,
-                answers=print_answers,
-                definitions=definitions,
-                request_word=request_word, difficult=difficult)
+    for i in range(count_var):
+        print_words(words,
+                    n_words = count_of_words,
+                    random_sort=True,
+                    answers=print_answers,
+                    definitions=definitions,
+                    request_word=request_word, difficult=difficult, n_var=i+1)
