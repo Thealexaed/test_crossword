@@ -293,7 +293,7 @@ def format_word(title, raw_category_item, user_words, target_words):
 
     try:
         words = title.split(' ')
-        if ', ' in title:
+        if ',' in title:
             words = title.split(', ')
     except:
         return '---'
