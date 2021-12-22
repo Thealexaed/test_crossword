@@ -616,6 +616,7 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
 
                 if request_word == 'Своя тема':
                     theme = 'Кроссворд на свою тему'
+                    request_word = order_list[randint(0, len(order_list)-1)]
                 else:
                     theme = 'Кроссворд на тему\n"'+request_word+'"'
 
