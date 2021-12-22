@@ -620,12 +620,6 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                 else:
                     theme = 'Кроссворд на тему\n"'+request_word+'"'
 
-                #image = get_images_data(request_word)
-                #image = cv2.imread('/content/image_name.jpg')[...,::-1]
-                #fig.figimage(image_2, alpha=0.3, resize=False, zorder=0)
-                #ax_1 = fig.add_axes([0,0,1,1], anchor='NW', frameon=False)
-                #ax_1.axis('off')
-
                 ax[1,0].text((x_max - abs(x_min))/2+3,
                              y_max+2,
                              theme,
@@ -673,7 +667,7 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                 ax[1,0].set_zorder(1)
                 ax[0,1].set_zorder(1)
                 
-                image = get_images_data(request_word)
+                image = get_images_data(request_word, n_var)
 
                 fx = int(fig.get_figwidth() * fig.dpi)+750
                 fy = int(fig.get_figheight() * fig.dpi)
@@ -699,7 +693,7 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
             break
 
 
-def get_images_data(word_request):
+def get_images_data(word_request, n_var):
     images_list = []
     true_images_list = []
     words = list()
@@ -748,9 +742,10 @@ def get_images_data(word_request):
             break
         try:
             img_data = requests.get(url).content
-            with open('image_name.jpg', 'wb') as handler:
+            image_name = 'image_'+ str(n_var) + '.jpg'
+            with open(image_name, 'wb') as handler:
                 handler.write(img_data)
-            image = cv2.imread('/content/image_name.jpg')[...,::-1]
+            image = cv2.imread('/content/' + image_name)[...,::-1]
             if image.shape[0] < 500:
                 continue
             elif image.shape[1]/image.shape[0] < 1.2:
