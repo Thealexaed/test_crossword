@@ -513,13 +513,15 @@ def searsh_words(urls, n, current_tree, words, request_word):
 
 # Функция для получения списка в рандомном порядке
 def random_list(words_list, count_word):
+    words_list_copy = words_list.copy()
+    random_index_list = []
     list_random = []
     while len(list_random) < count_word:
-        random_index = np.random.randint(0, len(words_list), 1)[0]
-        random_word = words_list[random_index]
-        if random_word not in list_random:
+        random_index = np.random.randint(0, len(words_list_copy), 1)[0]
+        if random_index not in random_index_list:
+            random_word = words_list_copy[random_index]
             list_random.append(random_word)
-            words_list.remove(random_word)
+            random_index_list.append(random_index)
     return list_random
 
 def search_unknown_category(request):
@@ -593,24 +595,32 @@ def distance(a, b):
 
 
 
-def find_word_common_category(words, word_request):
-    words.append(word_request)
+def find_word_common_category(words, word_request, count_of_words):
+    if word_request not in words:
+        words.append(word_request)
     cat_list = []
     word_list = []
     dict_w_c = dict()
     percent = 1/(len(words)**(0.8-(1/len(words))))*2
+    words = random_list(words, len(words))
+    if count_of_words > len(words):
+        count = len(words)
+    else:
+        count = count_of_words
     for word in words:
         try:
-            word = get_title(word)
+            word = get_title(word, target_word=word_request, defin=True)
             if '-' in word:
                 continue
             categories = get_category_item(word)
             if categories != []:
                 dict_w_c.update({word:categories})
+            else:
+                continue
             for category in categories:
-              cat_list.append(category)
+                cat_list.append(category)
         except:
-          continue
+            continue
 
     common_categories = sort_count_category(cat_list, int(len(cat_list)*percent))
     for word in dict_w_c.keys():
@@ -618,10 +628,27 @@ def find_word_common_category(words, word_request):
             word_list.append(word)
     return word_list
 
-def get_title(word_request, defin=False):
+    common_categories = sort_count_category(cat_list, int(len(cat_list)*percent))
+    for word in dict_w_c.keys():
+        if any([category in common_categories for category in dict_w_c[word]]) or word.lower() in common_categories:
+            word_list.append(word)
+    return word_list
+
+def get_title(word_request, target_word='', defin=False):
     abc = string.ascii_letters
     URL = 'https://ru.wikipedia.org/w/api.php?action=opensearch&search='+url_decoder(word_request)+'&format=json'
-    new_url = requests.get(URL).json()[3][0]
+    if target_word != '':
+        target_word = [target_word.lower()[:-2] if len(target_word) > 5 else target_word.lower()[:-1] if len(target_word) >= 4 else target_word.lower() for item in [target_word,]][0]
+        for i, item in enumerate(requests.get(URL).json()[1]):
+            if target_word in item:
+                index = i
+                break
+        try:
+            new_url = requests.get(URL).json()[3][index]
+        except:
+            new_url = requests.get(URL).json()[3][0]
+    else:
+        new_url = requests.get(URL).json()[3][0]
     page = requests.get(new_url).content
     html_tree = html.fromstring(page.decode('UTF-8'))
     items = html_tree.xpath(".//h1[contains(@class,'firstHeading')]")[0]
@@ -708,21 +735,31 @@ def get_page_text(request_word):
     page = requests.get(URL).content
     html_tree = html.fromstring(page.decode('UTF-8'))
     page_text = html_tree.text_content()
-    page_text = page_text.split('свободной энциклопедии')[1].split('↑')[0].replace('\n', ',').replace('\t', '').replace('\xa0', '').replace(',,', ',')
+    page_text = page_text.split('свободной энциклопедии')[1].split('↑')[0].replace('\n', ',').replace('\t', ',').replace('\xa0', '').replace(',,', ',')
     reg = r'[[0-9]+]'
     page_text = ''.join(re.split(reg, page_text))
+    page_text = page_text.replace(' и ', ', ')
+    page_text = page_text.replace('Примечания', '')
+    page_text = page_text.replace('Сноски', '')
+    page_text = page_text.replace('править', '')
     return page_text
 
 def get_words_page(request_word):
     page_text = get_page_text(request_word)
     list_items = []
     list_items_new = []
+    list_i = []
     [list_items.append(item) if item.count(',') > 2 else None for item in page_text.split('.')]
-    list_items
     for i in list_items:
         if ':' in i:
-            i = i.split(':')[1]
+            i_s = i.split(':')[1:]
+            [list_i.append(item) if item.count(' ') > 2 else None for item in i_s]
+        elif ' — ' in i:
+            i_s = i.split(' — ')[1:]
+            [list_i.append(item) if item.count(' ') > 2 else None for item in i_s]
         [list_items_new.append(word) for word in i.split(',')]
+    list_i = ','.join(list_i)
+    [list_items_new.append(word) for word in list_i.split(',')]
     return filter_words(list_items_new, request_word)
 
 def filter_words(list_raw_words, request_word):
@@ -796,9 +833,9 @@ def filter_words(list_raw_words, request_word):
     list_items = list(set(list_items))
     return list_items
 
-def new_page_searcher(word_request):
+def new_page_searcher(word_request, count_of_words):
     gwp = get_words_page(word_request)
-    gwp = find_word_common_category(gwp,word_request)
+    gwp = find_word_common_category(gwp, word_request, count_of_words)
     l_w = []
     dict_words = dict()
     for word in gwp:
@@ -813,7 +850,7 @@ def new_page_searcher(word_request):
             continue
     scc = sort_count_category(l_w, 10)
     gwp = list(set(scc + gwp))
-    gwp = find_word_common_category(gwp, word_request)
+    #gwp = find_word_common_category(gwp, word_request, count_of_words)
     for word in gwp:
         try:
             definition = get_def_gramota(word)
