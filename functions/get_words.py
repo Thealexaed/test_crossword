@@ -147,7 +147,7 @@ def request_to_search(request_word, count_of_words, coef, user_request):
     if len(set(set(request_word.split(' ')) & set(user_request.split(' ')))) == 0 and\
        len(set(user_request)) / len(set(user_request) & set(request_word)) < 0.7:
         sys.stdout.write('\rКажется, запрос немного непростой. Дайте минуточку...')
-        words_page_one, dict_titles_one = new_page_searcher(request_word)
+        words_page_one, dict_titles_one = new_page_searcher(request_word, count_of_words)
         if len(words_page_one) < count_of_words:
             words_page, dict_titles = parse_items(request_word, count_of_words, user_request)
         words_page += words_page_one
@@ -159,7 +159,7 @@ def request_to_search(request_word, count_of_words, coef, user_request):
             except:
                 new_request_word = search_unknown_category(user_request)
             sys.stdout.write('\rПопробую поискать на странице ' + new_request_word)
-            words_page_one, dict_titles_one = new_page_searcher(request_word)
+            words_page_one, dict_titles_one = new_page_searcher(request_word, count_of_words)
             if len(words_page_one) < count_of_words:
                 words_page, dict_titles = parse_items(new_request_word, count_of_words, user_request)
             words_page += words_page_one
@@ -201,7 +201,7 @@ def request_to_search(request_word, count_of_words, coef, user_request):
         count_of_words_for_search = count_of_words - len(words)
         # Cлова основной страницы
         sys.stdout.write('\r Ищу слова на странице википедии...')
-        words_page_one, dict_titles_one = new_page_searcher(request_word)
+        words_page_one, dict_titles_one = new_page_searcher(request_word, count_of_words_for_search)
         if len(words_page_one) < count_of_words_for_search:
             words_page_two, dict_titles = parse_items(request_word, count_of_words_for_search, user_request)
         words_page_two += words_page_one
