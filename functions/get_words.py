@@ -516,6 +516,7 @@ def random_list(words_list, count_word):
     words_list_copy = words_list.copy()
     random_index_list = []
     list_random = []
+    count_word = min(len(words_list), count_word)
     while len(list_random) < count_word:
         random_index = np.random.randint(0, len(words_list_copy), 1)[0]
         if random_index not in random_index_list:
@@ -684,12 +685,27 @@ def get_def_gramota(request_word):
     page = requests.get(URL).content
     html_tree = html.fromstring(bytes(page))
     page_text = html_tree.text_content().replace('\t', '')
-    page_text = page_text.split('return true')[1].split('О портале')[0].replace('\n', ',').replace('\t', '').replace('\xa0', '').replace(',,', ',')
-    reg = r'[А-Я]{2,30}'
+    reg_0 = r'[А-Я]{3,30},'
+    try:
+        start = re.findall(reg_0, page_text)[0]
+    except:
+        return list(definition_search([request_word,], dict()).values())[0]
+    page_text = page_text[page_text.index(start):]
+    page_text = page_text[:page_text.index('искомое слово отсутствует')]
+    page_text = page_text.replace('\n', ',').replace('\t', '').replace('\xa0', '').replace(',,', ',')
+    reg = r'[А-Я]{3,30},'
     reg_1 = r'[А-Я][^А-Я,\W]{2,20}'
-    reg_2 = r' -\w'
-    reg_3 = r'\W[А-Я]\W'
+    reg_2 = r'[а-я]{4,}\.'
+    reg_3 = r' -\w{1,2}'
     reg_4 = r'\d.\s'
+    reg_5 = r'\({1}[^\(]+\){1}'
+    reg_6 = r'\s[А-я]\.'
+    page_text = ' '.join(re.split(reg_5, page_text))
+    page_text = ' '.join(re.split(reg_6, page_text))
+    page_text = page_text.replace('   ', ' ')
+    page_text = page_text.replace('  ', ' ')
+    page_text = page_text.replace('<', '')
+    page_text = page_text.replace('>', '')
     if 'То' in page_text:
         page_text = page_text.replace('То', 'Нечто')
     try:
@@ -709,24 +725,22 @@ def get_def_gramota(request_word):
         definition = next_word + new_txt[0]
         next_word = word
         definition = re.sub(reg_4, '', definition)
-        if len(re.findall(reg_2,definition)) > 0 or len(re.findall(reg_3,definition)) > 0 or "отсутствует" in definition:
-            continue
-        elif [
-        request_word.lower()[:-2] if len(request_word) > 5 else request_word.lower()[:-1] if len(request_word) >= 4 else request_word.lower() for item in [request_word,] 
-                        ][0] in definition.lower():
-            continue
-        elif len(definition.split(' ')) < 3:
-            continue
-        else:
-            index_end = definition.rindex('.')
-            definition = definition[:index_end+1]
-            definitions.append(definition)
+        try:
+            stop_word = re.findall(reg_2, definition)[0]
+            definition = definition[:definition.index(stop_word)+len(stop_word)]
+        except:
+            definition = definition
+        if len(definition) > 20 and len(re.findall(reg_3, definition))==0:
+            break
+    definition = definition.replace(' .', '.')
     try:
-        if len(definitions[0]) < 20 or len(definitions[0].split(' ')) < 3:
+        if len(definition) < 20 or len(definition.split(' ')) < 3:
             return list(definition_search([request_word,], dict()).values())[0]
+        else:
+            return definition.strip() 
     except:
         return list(definition_search([request_word,], dict()).values())[0]
-    return definitions[0]
+
 
 
 def get_page_text(request_word):
@@ -735,31 +749,46 @@ def get_page_text(request_word):
     page = requests.get(URL).content
     html_tree = html.fromstring(page.decode('UTF-8'))
     page_text = html_tree.text_content()
-    page_text = page_text.split('свободной энциклопедии')[1].split('↑')[0].replace('\n', ',').replace('\t', ',').replace('\xa0', '').replace(',,', ',')
+    splitters = ['См. также', 'Литература[править', '↑']
+    for splitter in splitters:
+        if splitter in page_text:
+            splitter = splitter
+            break
+    page_text = page_text.split('свободной энциклопедии')[1].split('↑')[0].replace('\n', ',').replace('\t', '').replace('\xa0', '').replace(',,', ',')
     reg = r'[[0-9]+]'
     page_text = ''.join(re.split(reg, page_text))
+    reg = r'[A-Я]{1}\. {0,1}\S+'
+    page_text = ' '.join(re.split(reg, page_text))
     page_text = page_text.replace(' и ', ', ')
     page_text = page_text.replace('Примечания', '')
     page_text = page_text.replace('Сноски', '')
     page_text = page_text.replace('править', '')
+    reg = r'\[{1}[^\[]+\]{1}'
+    page_text = ' '.join(re.split(reg, page_text))
+    reg = r'\{{1}[^\{]+\}{1}'
+    page_text = ' '.join(re.split(reg, page_text))
+    reg = r'[A-Я]{1}\. {0,1}\S+'
+    page_text = ' '.join(re.split(reg, page_text))
+    page_text = page_text.replace(' ,', ',')
+    page_text = page_text.replace(',,', ', ')
+    page_text = page_text.replace(',', ', ')
+    page_text = page_text.replace('  ', ' ')
+    reg = r'\S{1,}\d+'
+    page_text = ' '.join(re.split(reg, page_text))
+    reg = r'\w{3,}[ ,:\.]'
+    page_text = ' '.join(re.findall(reg, page_text))
     return page_text
 
 def get_words_page(request_word):
     page_text = get_page_text(request_word)
     list_items = []
     list_items_new = []
-    list_i = []
     [list_items.append(item) if item.count(',') > 2 else None for item in page_text.split('.')]
+    list_items
     for i in list_items:
         if ':' in i:
-            i_s = i.split(':')[1:]
-            [list_i.append(item) if item.count(' ') > 2 else None for item in i_s]
-        elif ' — ' in i:
-            i_s = i.split(' — ')[1:]
-            [list_i.append(item) if item.count(' ') > 2 else None for item in i_s]
+            i = i.split(':')[1]
         [list_items_new.append(word) for word in i.split(',')]
-    list_i = ','.join(list_i)
-    [list_items_new.append(word) for word in list_i.split(',')]
     return filter_words(list_items_new, request_word)
 
 def filter_words(list_raw_words, request_word):
@@ -788,7 +817,11 @@ def filter_words(list_raw_words, request_word):
                                             'значен',
                                             'версия',
                                             'описание',
-                                            ' лет']) == True:
+                                            ' лет',
+                                            'год'
+                                            'день',
+                                            'сноск',
+                                            'некотор']) == True:
             continue
         if len(re.findall(dig, i)) > 0:
             continue
@@ -828,29 +861,20 @@ def filter_words(list_raw_words, request_word):
             continue
         if '-' in i:
             continue
+        if ',' in i:
+            try:
+                i = i.split(', ')[0]
+            except:
+                continue
         i = re.findall(reg, i)[0]
         list_items.append(i)
     list_items = list(set(list_items))
     return list_items
 
-def new_page_searcher(word_request, count_of_words):
-    gwp = get_words_page(word_request)
-    gwp = find_word_common_category(gwp, word_request, count_of_words)
+def new_page_searcher(word_request, count_words):
+    gwp = random_list(get_words_page(word_request), int(count_words*1.2))
     l_w = []
     dict_words = dict()
-    for word in gwp:
-        try:
-            definition = get_def_gramota(word)
-            key_words = definition.split(' ')
-            f_w = filter_words(key_words, word)
-            for f in f_w:
-                l_w.append(f)
-
-        except:
-            continue
-    scc = sort_count_category(l_w, 10)
-    gwp = list(set(scc + gwp))
-    #gwp = find_word_common_category(gwp, word_request, count_of_words)
     for word in gwp:
         try:
             definition = get_def_gramota(word)
