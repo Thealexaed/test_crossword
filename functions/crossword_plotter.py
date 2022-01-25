@@ -693,9 +693,10 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
             break
 
 
-def get_images_data(word_request, n_var):
+def get_images_data(word_request, n_var, return_urls=False):
     images_list = []
     true_images_list = []
+    true_urls_list = []
     words = list()
     headers = {
     "User-Agent":
@@ -750,9 +751,13 @@ def get_images_data(word_request, n_var):
                 continue
             elif image.shape[1]/image.shape[0] < 1.2:
                 continue
+
             true_images_list.append(image)
+            true_urls_list.append(url)
         except:
             continue
         if i > 1:
             break
+    if return_urls:
+        return true_urls_list[randint(0, len(true_urls_list)-1)]
     return true_images_list[randint(0, len(true_images_list)-1)]
