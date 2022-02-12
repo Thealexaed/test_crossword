@@ -667,24 +667,24 @@ def print_words(words, n_words=None, definitions=dict(), random_sort=True, answe
                 ax[1,0].set_zorder(1)
                 ax[0,1].set_zorder(1)
                 
-                image = get_images_data(request_word, n_var)
+                #image = get_images_data(request_word, n_var)
 
-                fx = int(fig.get_figwidth() * fig.dpi)+750
-                fy = int(fig.get_figheight() * fig.dpi)
+                #fx = int(fig.get_figwidth() * fig.dpi)+750
+                #fy = int(fig.get_figheight() * fig.dpi)
 
-                iy = image.shape[0]
-                coef_y = fy/iy
-                image = cv2.resize(image, (0,0), fx=coef_y, fy=coef_y) 
+                #iy = image.shape[0]
+                #coef_y = fy/iy
+                #image = cv2.resize(image, (0,0), fx=coef_y, fy=coef_y) 
 
-                ix = image.shape[1]
+                #ix = image.shape[1]
                 
-                coef_x = fx/ix
-                image = cv2.resize(image, (0,0), fx=coef_x, fy=coef_x) 
-                if image.shape[0] < fy:
-                    coef_y = fy/image.shape[0]
-                    image = cv2.resize(image, (0,0), fx=coef_y, fy=coef_y) 
-                im = fig.figimage(image, alpha=1, resize=False, zorder=0)
-                im.set_zorder(0)
+                #coef_x = fx/ix
+                #image = cv2.resize(image, (0,0), fx=coef_x, fy=coef_x) 
+                #if image.shape[0] < fy:
+                 #   coef_y = fy/image.shape[0]
+                 #   image = cv2.resize(image, (0,0), fx=coef_y, fy=coef_y) 
+                #im = fig.figimage(image, alpha=1, resize=False, zorder=0)
+                #im.set_zorder(0)
 
 
                 plt.show()
