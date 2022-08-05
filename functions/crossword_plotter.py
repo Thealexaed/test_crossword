@@ -740,7 +740,7 @@ def get_images_data(word_request, n_var, return_urls=False):
     time_1 = time.mktime(time.gmtime())
     for i, url in enumerate(images_list):
         if time.mktime(time.gmtime()) - time_1 > 40 and (true_images_list) > 1:
-            break
+            continue
         try:
             img_data = requests.get(url).content
             image_name = 'image_'+ str(n_var) + '.jpg'
